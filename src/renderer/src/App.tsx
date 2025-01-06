@@ -1,5 +1,6 @@
-import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
+import electronLogo from '@/assets/electron.svg'
+import Versions from '@/components/Versions'
+import { Button } from '@/components/ui/button'
 
 function App(): JSX.Element {
   const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
@@ -27,6 +28,7 @@ function App(): JSX.Element {
           </a>
         </div>
       </div>
+      <Button variant="default">TEST</Button>
       <Versions></Versions>
     </>
   )
