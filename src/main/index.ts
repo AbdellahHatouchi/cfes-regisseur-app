@@ -23,6 +23,7 @@ function createWindow(): void {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
+      devTools: false,
       contextIsolation: true, // Enable context isolation
       nodeIntegration: false // Disable Node.js integration
     }
