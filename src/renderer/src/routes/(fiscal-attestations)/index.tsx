@@ -5,13 +5,20 @@ import { Separator } from '@/components/ui/separator'
 import { createFileRoute } from '@tanstack/react-router'
 import { Building2, Plus, User } from 'lucide-react'
 import { facetedFilter } from '@/constants'
-import { columns } from '@/pages/fiscal-attestations/columns'
+import { AttestationType, columns } from '@/pages/fiscal-attestations/columns'
+import { useEffect, useState } from 'react'
+import { FiscalAttestationAttributes } from 'type'
+import { format } from 'date-fns'
+import { fr } from 'date-fns/locale'
 
 export const Route = createFileRoute('/(fiscal-attestations)/')({
   component: FiscalAttestation
 })
 
 export function FiscalAttestation() {
+  const [attestations, setAttestations] = useState<
+    (FiscalAttestationAttributes & { createdAt: string })[]
+  >([])
   const navigate = Route.useNavigate()
   const listOfFacetedFilter: facetedFilter[] = [
     {
@@ -30,6 +37,35 @@ export function FiscalAttestation() {
     { accessorKey: 'itp', label: 'ITP' },
     { accessorKey: 'if', label: 'IF' }
   ]
+  useEffect(() => {
+    const fetchAttestations = async () => {
+      try {
+        const response = await window.electron.ipcRenderer.invoke('getFiscalAttestations')
+        if (response.success) {
+          setAttestations(response.data)
+        } else {
+          alert(response.message)
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des attestations fiscales:', error)
+        alert('Erreur lors de la récupération des attestations fiscales')
+      }
+    }
+
+    fetchAttestations()
+  }, [])
+
+  const formattedAttestations = attestations.map((attestation) => ({
+    id: attestation.id,
+    ref: attestation.attestationNumber,
+    type: (attestation.type ? 'Personal' : 'Entreprise') as AttestationType,
+    name: attestation.name,
+    identity: attestation.identity,
+    itp: attestation.ITP,
+    if: attestation.IF,
+    createdAt: format(attestation.createdAt, 'dd MMMM yyyy', { locale: fr })
+  }))
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -52,7 +88,7 @@ export function FiscalAttestation() {
       </div>
       <Separator />
       <DataTable
-        data={[]}
+        data={formattedAttestations}
         columns={columns}
         toolbar={{
           searchKeys,

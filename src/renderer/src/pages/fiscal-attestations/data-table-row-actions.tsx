@@ -1,4 +1,4 @@
-import { Eye, MoreHorizontalIcon, PenBoxIcon } from 'lucide-react'
+import { Eye, MoreHorizontalIcon, PenBoxIcon, Trash2 } from 'lucide-react'
 import { Row } from '@tanstack/react-table'
 
 import { Button } from '@/components/ui/button'
@@ -11,35 +11,37 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 import { toast } from 'sonner'
-// import { ConfirmModal } from "@/components/modals/confirm-modal"
 import { useTransition } from 'react'
 import { FiscalATColumn } from './columns'
+import { useRouter } from '@tanstack/react-router'
+import { ConfirmModal } from '@/components/modals/confirm-modal'
 
 interface DataTableRowActionsProps {
   row: Row<FiscalATColumn>
 }
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
-  // const router = useRouter()
+  const router = useRouter()
   // const params = useParams()
   const [isPending, startTransition] = useTransition()
   const onDelete = () => {
     startTransition(() => {
-      // try {
-      //   let data = { error: '', success: '' }
-      //   data = await updateIsActive(row.original.id,!row.original.isActive)
-      //   if (data.success) {
-      //     toast.success(data.success)
-      //     router.refresh();
-      //   }else if (data.error) {
-      //     if (data.error === "Unautherzied") {
-      //       logout();
-      //     }
-      //     toast.error(data.error)
-      //   }
-      // } catch (error) {
-      //   toast.error(`Quelque chose s'est mal passé !`)
-      // }
+      ;(async () => {
+        try {
+          const res = await window.electron.ipcRenderer.invoke(
+            'deleteFiscalAttestation',
+            row.original.id
+          )
+          if (res.success) {
+            toast.success('Attestation fiscale supprimée avec succès')
+            router.navigate({ reloadDocument: true })
+          } else {
+            toast.error("Erreur lors de la suppression de l'attestation fiscale")
+          }
+        } catch (error) {
+          toast.error("Erreur lors de la suppression de l'attestation fiscale")
+        }
+      })()
     })
   }
 
@@ -52,22 +54,29 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">
-        <DropdownMenuItem onClick={() => {}}>
+        <DropdownMenuItem
+          disabled={isPending}
+          onClick={() =>
+            router.navigate({ to: '/$fiscalATId/view', params: { fiscalATId: row.original.id } })
+          }
+        >
           <Eye className="h-4 w-4 mr-2" />
           Affichier
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => {}}>
+        <DropdownMenuItem
+          disabled={isPending}
+          onClick={() =>
+            router.navigate({ to: '/$fiscalATId', params: { fiscalATId: row.original.id } })
+          }
+        >
           <PenBoxIcon className="h-4 w-4 mr-2" />
           Modifier
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        {/* <ConfirmModal
-          header={row.original.isActive?"Désactiver l'utilisateur?":"Activer l'utilisateur?"}
-          description={row.original.isActive?
-            "Cela désactivera l'utilisateur et il ne pourra plus effectuer d'actions dans l'application."
-            :"Cela activera l'utilisateur et il pourra de nouveau effectuer des actions dans l'application."
-          }
-          disabled={false}
+        <ConfirmModal
+          header="Supprimer l'attestation fiscale?"
+          description="Cela supprimera l'attestation fiscale de manière permanente."
+          disabled={isPending}
           onConfirm={onDelete}
         >
           <Button
@@ -75,10 +84,10 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
             size="sm"
             className="p-2 cursor-pointer text-sm w-full justify-start font-normal"
           >
-            {row.original.isActive ?<CircleX className="h-4 w-4 mr-2"/>:<CircleCheck className="h-4 w-4 mr-2"/>}
-            {row.original.isActive ?"désactiver":"activer"}
+            <Trash2 className="h-4 w-4 mr-2" />
+            Supprimer
           </Button>
-        </ConfirmModal> */}
+        </ConfirmModal>
       </DropdownMenuContent>
     </DropdownMenu>
   )

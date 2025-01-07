@@ -1,14 +1,16 @@
 import { DataTableColumnHeader } from '@/components/table/data-table-column-header'
 import { ColumnDef } from '@tanstack/react-table'
 import { DataTableRowActions } from './data-table-row-actions'
+import { Badge } from '@/components/ui/badge'
+export type AttestationType = 'Personal' | 'Entreprise'
 export type FiscalATColumn = {
   id: string
   ref: string
-  type: 'Personal' | 'Entreprise'
+  type: AttestationType
   name: string
   identity: string
-  itp: number
-  if: number
+  itp: string
+  if: string
   createdAt: string
 }
 
@@ -23,15 +25,24 @@ export const columns: ColumnDef<FiscalATColumn>[] = [
   {
     accessorKey: 'name',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Nom et Prénom" />,
-    cell: ({ row }) => <div className="min-w-[120px]">{row.getValue('name')}</div>,
+    cell: ({ row }) => <div className="min-w-[130px]">{row.getValue('name')}</div>,
     enableSorting: true,
     enableHiding: false
   },
   {
     accessorKey: 'type',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
-    cell: ({ row }) => <div className="min-w-[80px]">{row.getValue('type')}</div>,
-    enableSorting: true,
+    cell: ({ row }) => {
+      const type = row.getValue('type')
+      return (
+        <div className="min-w-[150px]">
+          <Badge variant={type === 'Personal' ? 'default' : 'secondary'}>
+            {type === 'Personal' ? 'Personne Physique' : 'Entreprise'}
+          </Badge>
+        </div>
+      )
+    },
+    enableSorting: false,
     enableHiding: true,
     filterFn: (row, id, value) => {
       return value.includes(String(row.getValue(id)))

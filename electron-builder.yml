@@ -12,6 +12,7 @@ files:
 asarUnpack:
   - resources/**
 win:
+  icon: assets/icons/icon.ico
   executableName: cfes-regisseur-app
 nsis:
   artifactName: ${name}-${version}-setup.${ext}

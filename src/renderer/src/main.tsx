@@ -1,13 +1,14 @@
 // GLOBALE CSS STYLE
 import '@/globale.css'
 
-import { StrictMode } from 'react'
+// import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
 import { ThemeProvider } from './providers/theme-provider'
+import { Toaster } from 'sonner'
 
 // Create a new router instance
 const router = createRouter({ routeTree })
@@ -24,10 +25,11 @@ const rootElement = document.getElementById('root')!
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
-    <StrictMode>
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-        <RouterProvider router={router} />
-      </ThemeProvider>
-    </StrictMode>
+    // <StrictMode>
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <Toaster duration={5000} position="bottom-center" />
+      <RouterProvider router={router} />
+    </ThemeProvider>
+    // </StrictMode>
   )
 }

@@ -2,6 +2,14 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { sequelize, TestConnection } from './lib'
+import {
+  createFiscalAttestation,
+  deleteFiscalAttestation,
+  getFiscalAttestationById,
+  getFiscalAttestations,
+  updateFiscalAttestation
+} from './lib/fiscal-attestation/controller'
 
 function createWindow(): void {
   // Create the browser window.
@@ -11,9 +19,12 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
+    icon: join(__dirname, '../assets/icons/icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      contextIsolation: true, // Enable context isolation
+      nodeIntegration: false // Disable Node.js integration
     }
   })
 
@@ -38,7 +49,7 @@ function createWindow(): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
@@ -49,8 +60,22 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
+  try {
+    await TestConnection()
+    await sequelize.sync()
+    console.log('Connection established successfully')
+  } catch (error) {
+    console.error('Failed to initialize database:', error)
+  }
+
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+  // Fiscal Attestation
+  ipcMain.handle('getFiscalAttestations', getFiscalAttestations)
+  ipcMain.handle('createFiscalAttestation', (_e, data) => createFiscalAttestation(data))
+  ipcMain.handle('updateFiscalAttestation', (_e, data) => updateFiscalAttestation(data.id, data))
+  ipcMain.handle('deleteFiscalAttestation', (_e, id) => deleteFiscalAttestation(id))
+  ipcMain.handle('getFiscalAttestationById', (_e, id) => getFiscalAttestationById(id))
 
   createWindow()
 

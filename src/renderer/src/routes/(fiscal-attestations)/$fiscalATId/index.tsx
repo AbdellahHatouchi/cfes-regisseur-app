@@ -19,17 +19,31 @@ import {
 import SwitchWidget from '@/components/ui/switch-widget'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { FiscalAttestationAttributes } from 'type'
 
 export const Route = createFileRoute('/(fiscal-attestations)/$fiscalATId/')({
-  component: FiscalAttestationFrom
+  component: FiscalAttestationFrom,
+  loader: async ({ params }) => {
+    try {
+      const response = await window.electron.ipcRenderer.invoke(
+        'getFiscalAttestationById',
+        params.fiscalATId
+      )
+      if (response.success) {
+        return response.data
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération de l'attestation fiscale:", error)
+      alert("Erreur lors de la récupération de l'attestation fiscale")
+    }
+    return null
+  }
 })
 
-interface FiscalAttestationFromPorps {
-  initialData: null
-}
+type FiscalAttestationFromPorps = FiscalAttestationAttributes | null
 
 const formSchema = z.object({
-  type: z.boolean(),
+  type: z.coerce.boolean(),
   name: z.string().min(3, { message: 'Nom et Prénom est requis!' }),
   ITP: z.string().min(1, { message: 'ITP est requis!' }),
   IF: z.string().min(1, { message: 'IF est requis!' }),
@@ -40,10 +54,12 @@ const formSchema = z.object({
 
 type FiscalATValues = z.infer<typeof formSchema>
 
-function FiscalAttestationFrom({ initialData }: FiscalAttestationFromPorps) {
+function FiscalAttestationFrom() {
   const [open, setOpen] = useState<boolean>(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const initialData = Route.useLoaderData() as FiscalAttestationFromPorps
+
   const form = useForm<FiscalATValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
@@ -64,7 +80,60 @@ function FiscalAttestationFrom({ initialData }: FiscalAttestationFromPorps) {
 
   const onSubmit = (values: FiscalATValues) => {
     startTransition(() => {
-      console.log(values)
+      ;(async () => {
+        try {
+          if (initialData) {
+            // Update existing fiscal attestation
+            const response = await window.electron.ipcRenderer.invoke('updateFiscalAttestation', {
+              id: initialData.id,
+              ...values
+            })
+            if (response.success) {
+              alert('Mise à jour réussie')
+              router.navigate({ to: '/' })
+            } else {
+              alert(response.message)
+            }
+          } else {
+            // Create new fiscal attestation
+            const response = await window.electron.ipcRenderer.invoke(
+              'createFiscalAttestation',
+              values
+            )
+            if (response.success) {
+              alert('Création réussie')
+              router.navigate({ to: '/' })
+            } else {
+              alert(response.message)
+            }
+          }
+        } catch (error) {
+          console.error('Erreur lors de la soumission du formulaire:', error)
+          alert('Erreur lors de la soumission du formulaire')
+        }
+      })()
+    })
+  }
+
+  const onDelete = () => {
+    startTransition(() => {
+      ;(async () => {
+        try {
+          const response = await window.electron.ipcRenderer.invoke(
+            'deleteFiscalAttestation',
+            initialData?.id
+          )
+          if (response.success) {
+            alert('Suppression réussie')
+            router.navigate({ to: '/' })
+          } else {
+            alert(response.message)
+          }
+        } catch (error) {
+          console.error("Erreur lors de la suppression de l'attestation fiscale:", error)
+          alert("Erreur lors de la suppression de l'attestation fiscale")
+        }
+      })()
     })
   }
 
@@ -73,7 +142,7 @@ function FiscalAttestationFrom({ initialData }: FiscalAttestationFromPorps) {
       <AlertModal
         isOpen={open}
         onClose={() => setOpen(false)}
-        onConfirm={() => {}}
+        onConfirm={onDelete}
         loading={isPending}
       />
       <div className="flex items-center justify-between">
@@ -105,7 +174,7 @@ function FiscalAttestationFrom({ initialData }: FiscalAttestationFromPorps) {
               <SwitchWidget
                 label="Est-ce pour une personne physique"
                 description="Activez cette option si l'attestation est pour une personne physique."
-                field={{ value: field.value, onChange: field.onChange }}
+                field={{ value: Boolean(field.value), onChange: field.onChange }}
               />
             )}
           />
