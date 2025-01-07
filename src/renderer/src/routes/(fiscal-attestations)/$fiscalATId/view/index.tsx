@@ -135,6 +135,8 @@ function ViewFiscalAttestation() {
             document={<FiscalAttestationPDF fiscalAttestation={attestation} />}
             fileName={`${attestation.attestationNumber}.pdf`}
           >
+            {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+            {/* @ts-ignore */}
             {({ loading }) => {
               return (
                 <Button size="sm" variant="default" disabled={loading}>
