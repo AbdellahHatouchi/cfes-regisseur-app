@@ -11,18 +11,11 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as AboutImport } from './routes/about'
 import { Route as fiscalAttestationsIndexImport } from './routes/(fiscal-attestations)/index'
 import { Route as fiscalAttestationsFiscalATIdIndexImport } from './routes/(fiscal-attestations)/$fiscalATId/index'
 import { Route as fiscalAttestationsFiscalATIdViewIndexImport } from './routes/(fiscal-attestations)/$fiscalATId/view/index'
 
 // Create/Update Routes
-
-const AboutRoute = AboutImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const fiscalAttestationsIndexRoute = fiscalAttestationsIndexImport.update({
   id: '/(fiscal-attestations)/',
@@ -48,13 +41,6 @@ const fiscalAttestationsFiscalATIdViewIndexRoute =
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutImport
-      parentRoute: typeof rootRoute
-    }
     '/(fiscal-attestations)/': {
       id: '/(fiscal-attestations)/'
       path: '/'
@@ -82,14 +68,12 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 export interface FileRoutesByFullPath {
-  '/about': typeof AboutRoute
   '/': typeof fiscalAttestationsIndexRoute
   '/$fiscalATId': typeof fiscalAttestationsFiscalATIdIndexRoute
   '/$fiscalATId/view': typeof fiscalAttestationsFiscalATIdViewIndexRoute
 }
 
 export interface FileRoutesByTo {
-  '/about': typeof AboutRoute
   '/': typeof fiscalAttestationsIndexRoute
   '/$fiscalATId': typeof fiscalAttestationsFiscalATIdIndexRoute
   '/$fiscalATId/view': typeof fiscalAttestationsFiscalATIdViewIndexRoute
@@ -97,7 +81,6 @@ export interface FileRoutesByTo {
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
-  '/about': typeof AboutRoute
   '/(fiscal-attestations)/': typeof fiscalAttestationsIndexRoute
   '/(fiscal-attestations)/$fiscalATId/': typeof fiscalAttestationsFiscalATIdIndexRoute
   '/(fiscal-attestations)/$fiscalATId/view/': typeof fiscalAttestationsFiscalATIdViewIndexRoute
@@ -105,12 +88,11 @@ export interface FileRoutesById {
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/about' | '/' | '/$fiscalATId' | '/$fiscalATId/view'
+  fullPaths: '/' | '/$fiscalATId' | '/$fiscalATId/view'
   fileRoutesByTo: FileRoutesByTo
-  to: '/about' | '/' | '/$fiscalATId' | '/$fiscalATId/view'
+  to: '/' | '/$fiscalATId' | '/$fiscalATId/view'
   id:
     | '__root__'
-    | '/about'
     | '/(fiscal-attestations)/'
     | '/(fiscal-attestations)/$fiscalATId/'
     | '/(fiscal-attestations)/$fiscalATId/view/'
@@ -118,14 +100,12 @@ export interface FileRouteTypes {
 }
 
 export interface RootRouteChildren {
-  AboutRoute: typeof AboutRoute
   fiscalAttestationsIndexRoute: typeof fiscalAttestationsIndexRoute
   fiscalAttestationsFiscalATIdIndexRoute: typeof fiscalAttestationsFiscalATIdIndexRoute
   fiscalAttestationsFiscalATIdViewIndexRoute: typeof fiscalAttestationsFiscalATIdViewIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  AboutRoute: AboutRoute,
   fiscalAttestationsIndexRoute: fiscalAttestationsIndexRoute,
   fiscalAttestationsFiscalATIdIndexRoute:
     fiscalAttestationsFiscalATIdIndexRoute,
@@ -143,14 +123,10 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/about",
         "/(fiscal-attestations)/",
         "/(fiscal-attestations)/$fiscalATId/",
         "/(fiscal-attestations)/$fiscalATId/view/"
       ]
-    },
-    "/about": {
-      "filePath": "about.tsx"
     },
     "/(fiscal-attestations)/": {
       "filePath": "(fiscal-attestations)/index.tsx"

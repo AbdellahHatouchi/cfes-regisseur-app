@@ -12,7 +12,7 @@ files:
 asarUnpack:
   - resources/**
 win:
-  icon: assets/icons/icon.ico
+  icon: /assets/icons/icon.ico
   executableName: cfes-regisseur-app
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
@@ -41,4 +41,6 @@ appImage:
 npmRebuild: false
 publish:
   provider: github
-  url: https://github.com/AbdellahHatouchi/cfes-regisseur-app.git
+  owner: AbdellahHatouchi
+  repo: cfes-regisseur-app
+  releaseType: draft

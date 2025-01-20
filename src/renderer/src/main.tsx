@@ -11,7 +11,9 @@ import { ThemeProvider } from './providers/theme-provider'
 import { Toaster } from 'sonner'
 
 // Create a new router instance
-const router = createRouter({ routeTree })
+const router = createRouter({
+  routeTree
+})
 
 // Register the router instance for type safety
 declare module '@tanstack/react-router' {

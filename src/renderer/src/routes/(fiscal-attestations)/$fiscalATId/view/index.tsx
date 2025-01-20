@@ -10,7 +10,7 @@ import { fr } from 'date-fns/locale'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import FiscalAttestationPDF from '@/components/pdf/fiscal-attestation'
 import { CopyCheck, FileDown, Trash2, Undo2 } from 'lucide-react'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { AlertModal } from '@/components/modals/alert-modal'
 import { toast } from 'sonner'
 
@@ -45,68 +45,63 @@ export const Route = createFileRoute('/(fiscal-attestations)/$fiscalATId/view/')
 
 function ViewFiscalAttestation() {
   const [open, setOpen] = useState<boolean>(false)
-  const [isPending, startTransition] = useTransition()
+  const [isPending, setIsPending] = useState<boolean>(false)
   const router = useRouter()
   const attestation = Route.useLoaderData() as FiscalAttestation
 
-  const onDelete = () => {
-    startTransition(() => {
-      ;(async () => {
-        try {
-          const response = await window.electron.ipcRenderer.invoke(
-            'deleteFiscalAttestation',
-            attestation?.id
-          )
-          if (response.success) {
-            alert('Suppression réussie')
-            router.navigate({ to: '/' })
-          } else {
-            alert(response.message)
-          }
-        } catch (error) {
-          console.error("Erreur lors de la suppression de l'attestation fiscale:", error)
-          alert("Erreur lors de la suppression de l'attestation fiscale")
-        }
-      })()
-    })
+  const onDelete = async () => {
+    try {
+      setIsPending(true)
+      const response = await window.electron.ipcRenderer.invoke(
+        'deleteFiscalAttestation',
+        attestation?.id
+      )
+      if (response.success) {
+        alert('Suppression réussie')
+        router.navigate({ to: '/' })
+      } else {
+        alert(response.message)
+      }
+    } catch (error) {
+      console.error("Erreur lors de la suppression de l'attestation fiscale:", error)
+      alert("Erreur lors de la suppression de l'attestation fiscale")
+    } finally {
+      setIsPending(false)
+    }
   }
 
-  const handleCreateCopy = () => {
-    startTransition(() => {
-      ;(async () => {
-        if (attestation) {
-          try {
-            const data = {
-              type: Boolean(attestation.type),
-              name: attestation.name,
-              ITP: attestation.ITP,
-              IF: attestation.IF,
-              identity: attestation.identity,
-              activite: attestation.activite,
-              address: attestation.address
-            }
-            const response = await window.electron.ipcRenderer.invoke(
-              'createFiscalAttestation',
-              data
-            )
-
-            if (response.success) {
-              alert('Copie créée avec succès')
-              toast.success('Copie créée avec succès')
-              router.navigate({
-                to: '/$fiscalATId/view',
-                params: { fiscalATId: response.data.dataValues.id }
-              })
-            } else {
-              alert(response.message)
-            }
-          } catch (error) {
-            console.error('Erreur lors de la création de la copie:', error)
-            alert('Erreur lors de la création de la copie')
-          }
+  const handleCreateCopy = async () => {
+    if (attestation) {
+      try {
+        setIsPending(false)
+        const data = {
+          type: Boolean(attestation.type),
+          name: attestation.name,
+          ITP: attestation.ITP,
+          IF: attestation.IF,
+          identity: attestation.identity,
+          activite: attestation.activite,
+          address: attestation.address
         }
-      })()
-    })
+        const response = await window.electron.ipcRenderer.invoke('createFiscalAttestation', data)
+
+        if (response.success) {
+          alert('Copie créée avec succès')
+          toast.success('Copie créée avec succès')
+          router.navigate({
+            to: '/$fiscalATId/view',
+            params: { fiscalATId: response.data.dataValues.id }
+          })
+        } else {
+          alert(response.message)
+        }
+      } catch (error) {
+        console.error('Erreur lors de la création de la copie:', error)
+        alert('Erreur lors de la création de la copie')
+      } finally {
+        setIsPending(false)
+      }
+    }
   }
 
   if (!attestation) {

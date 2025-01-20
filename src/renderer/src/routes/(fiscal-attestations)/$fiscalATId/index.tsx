@@ -5,7 +5,7 @@ import { Heading } from '@/components/ui/heading'
 import { Separator } from '@/components/ui/separator'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { Trash, Undo2 } from 'lucide-react'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import {
@@ -56,7 +56,7 @@ type FiscalATValues = z.infer<typeof formSchema>
 
 function FiscalAttestationFrom() {
   const [open, setOpen] = useState<boolean>(false)
-  const [isPending, startTransition] = useTransition()
+  const [isPending, setIsPending] = useState<boolean>(false)
   const router = useRouter()
   const initialData = Route.useLoaderData() as FiscalAttestationFromPorps
 
@@ -78,63 +78,58 @@ function FiscalAttestationFrom() {
     : 'Ajouter une nouvelle attestation fiscale'
   const action = initialData ? 'Modifier' : 'Ajouter'
 
-  const onSubmit = (values: FiscalATValues) => {
-    startTransition(() => {
-      ;(async () => {
-        try {
-          if (initialData) {
-            // Update existing fiscal attestation
-            const response = await window.electron.ipcRenderer.invoke('updateFiscalAttestation', {
-              id: initialData.id,
-              ...values
-            })
-            if (response.success) {
-              alert('Mise à jour réussie')
-              router.navigate({ to: '/' })
-            } else {
-              alert(response.message)
-            }
-          } else {
-            // Create new fiscal attestation
-            const response = await window.electron.ipcRenderer.invoke(
-              'createFiscalAttestation',
-              values
-            )
-            if (response.success) {
-              alert('Création réussie')
-              router.navigate({ to: '/' })
-            } else {
-              alert(response.message)
-            }
-          }
-        } catch (error) {
-          console.error('Erreur lors de la soumission du formulaire:', error)
-          alert('Erreur lors de la soumission du formulaire')
+  const onSubmit = async (values: FiscalATValues) => {
+    try {
+      setIsPending(true)
+      if (initialData) {
+        // Update existing fiscal attestation
+        const response = await window.electron.ipcRenderer.invoke('updateFiscalAttestation', {
+          id: initialData.id,
+          ...values
+        })
+        if (response.success) {
+          alert('Mise à jour réussie')
+          router.navigate({ to: '/' })
+        } else {
+          alert(response.message)
         }
-      })()
-    })
+      } else {
+        // Create new fiscal attestation
+        const response = await window.electron.ipcRenderer.invoke('createFiscalAttestation', values)
+        if (response.success) {
+          alert('Création réussie')
+          router.navigate({ to: '/' })
+        } else {
+          alert(response.message)
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la soumission du formulaire:', error)
+      alert('Erreur lors de la soumission du formulaire')
+    } finally {
+      setIsPending(false)
+    }
   }
 
-  const onDelete = () => {
-    startTransition(() => {
-      ;(async () => {
-        try {
-          const response = await window.electron.ipcRenderer.invoke(
-            'deleteFiscalAttestation',
-            initialData?.id
-          )
-          if (response.success) {
-            alert('Suppression réussie')
-            router.navigate({ to: '/' })
-          } else {
-            alert(response.message)
-          }
-        } catch (error) {
-          console.error("Erreur lors de la suppression de l'attestation fiscale:", error)
-          alert("Erreur lors de la suppression de l'attestation fiscale")
-        }
-      })()
-    })
+  const onDelete = async () => {
+    try {
+      setIsPending(true)
+      const response = await window.electron.ipcRenderer.invoke(
+        'deleteFiscalAttestation',
+        initialData?.id
+      )
+      if (response.success) {
+        alert('Suppression réussie')
+        router.navigate({ to: '/' })
+      } else {
+        alert(response.message)
+      }
+    } catch (error) {
+      console.error("Erreur lors de la suppression de l'attestation fiscale:", error)
+      alert("Erreur lors de la suppression de l'attestation fiscale")
+    } finally {
+      setIsPending(false)
+    }
   }
 
   return (
