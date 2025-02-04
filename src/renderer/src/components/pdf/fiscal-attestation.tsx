@@ -44,8 +44,8 @@ const tw = createTw({
       },
       fontSize: {
         xs: '10px',
-        sm: '12px',
-        base: '14px',
+        sm: '10px',
+        base: '12px',
         lg: '16px',
         xl: '18px'
       }
@@ -140,17 +140,17 @@ const FiscalAttestationPDF: React.FC<FiscalAttestationPDFProps> = ({ fiscalAttes
         </View>
 
         {/* Title Section */}
-        <View style={tw('text-center mb-4')}>
-          <Text style={tw('text-4xl font-alexUltraBold uppercase underline')}>
+        <View style={tw('text-center px-6 mb-4')}>
+          <Text style={tw('text-3xl font-alexUltraBold uppercase underline')}>
             ATTESTATION DE BIEN VIVRE
           </Text>
-          <Text style={tw('text-base text-left font-alexBold text-primary')}>
+          <Text style={tw('text-base text-left pl-8 font-alexBold text-primary')}>
             N°: {attestationNumber}
           </Text>
         </View>
 
         {/* attesatation Details Section */}
-        <View style={tw('text-base capitalize my-5')}>
+        <View style={tw('text-base capitalize px-6 pl-14 my-5')}>
           <Text style={tw('mb-4')}>{`JE SOUSIGNE PRESIDENT DE LA COMMUNE DE FERKLA ESSOUFLA`}</Text>
           <Text style={tw('mb-4')}>
             {`ATTESTE QUE :`} <Text style={tw('font-alexBold text-primary')}>{name}</Text>
@@ -176,7 +176,7 @@ const FiscalAttestationPDF: React.FC<FiscalAttestationPDFProps> = ({ fiscalAttes
             <Text style={tw('font-alexBold text-primary')}>{activite}</Text>
           </Text>
           <Text style={tw('font-alexBold text-primary mb-4')}>
-            {`EN DETAIL N'A PAS DE TAXES A REGLER VIS-A-VIS DE LA COMMUNE FERKLA ESSOUFLA JUSQU'A LA DATE DE CE JOUR.`}
+            {`N'A PAS DE TAXES A REGLER VIS-A-VIS DE LA COMMUNE FERKLA ESSOUFLA JUSQU'A LA DATE DE CE JOUR.`}
           </Text>
           <Text style={tw('mb-3')}>
             {`EN FOI DE QUOI LA PRESENTE ATTESTATION EST DELIVREE A L'INTERESSE POUR LUI SERVIR ET VALOIR CE QUE DE DROIT.`}
@@ -194,7 +194,7 @@ const FiscalAttestationPDF: React.FC<FiscalAttestationPDFProps> = ({ fiscalAttes
         </View>
 
         {/* Footer Section */}
-        <View style={tw('border-t p-6 uppercase border-blue-100 mt-4')}>
+        <View style={tw('p-6 uppercase')}>
           {/* President Section */}
           <View style={tw('flex flex-row mb-24 justify-center items-center')}>
             <View style={tw('text-sm text-center')}>
