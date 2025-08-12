@@ -11,16 +11,14 @@ import { UserAttributes } from 'type'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
-export const Route = createFileRoute('/(users)/')({
+export const Route = createFileRoute('/users/')({
   component: UsersPage
 })
 
 export function UsersPage() {
-  const [users, setUsers] = useState<
-    (UserAttributes & { createdAt: string })[]
-  >([])
+  const [users, setUsers] = useState<(UserAttributes & { createdAt: string })[]>([])
   const navigate = Route.useNavigate()
-  
+
   const listOfFacetedFilter: facetedFilter[] = [
     {
       label: 'Statut',

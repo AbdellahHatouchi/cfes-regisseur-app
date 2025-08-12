@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { FiscalAttestationAttributes } from 'type'
 
-export const Route = createFileRoute('/(fiscal-attestations)/$fiscalATId/')({
+export const Route = createFileRoute('/fiscal-attestations/$fiscalATId/')({
   component: FiscalAttestationFrom,
   loader: async ({ params }) => {
     try {
@@ -169,7 +169,10 @@ function FiscalAttestationFrom() {
               <SwitchWidget
                 label="Est-ce pour une personne physique"
                 description="Activez cette option si l'attestation est pour une personne physique."
-                field={{ value: Boolean(field.value), onChange: field.onChange }}
+                field={{
+                  value: Boolean(field.value),
+                  onChange: field.onChange
+                }}
               />
             )}
           />

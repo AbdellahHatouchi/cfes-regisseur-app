@@ -28,7 +28,7 @@ type FiscalAttestation = {
   updatedAt: string
 }
 
-export const Route = createFileRoute('/(fiscal-attestations)/$fiscalATId/view/')({
+export const Route = createFileRoute('/fiscal-attestations/$fiscalATId/view/')({
   component: ViewFiscalAttestation,
   loader: async ({ params }) => {
     const response = await window.electron.ipcRenderer.invoke(
@@ -89,7 +89,7 @@ function ViewFiscalAttestation() {
           alert('Copie créée avec succès')
           toast.success('Copie créée avec succès')
           router.navigate({
-            to: '/$fiscalATId/view',
+            to: '/fiscal-attestations/$fiscalATId/view',
             params: { fiscalATId: response.data.dataValues.id }
           })
         } else {
@@ -177,11 +177,15 @@ function ViewFiscalAttestation() {
               <FeildView label="IF" value={attestation.IF} />
               <FeildView
                 label="Date de création"
-                value={format(new Date(attestation.createdAt), 'dd/MM/yyyy', { locale: fr })}
+                value={format(new Date(attestation.createdAt), 'dd/MM/yyyy', {
+                  locale: fr
+                })}
               />
               <FeildView
                 label="Date de mise à jour"
-                value={format(new Date(attestation.updatedAt), 'dd/MM/yyyy', { locale: fr })}
+                value={format(new Date(attestation.updatedAt), 'dd/MM/yyyy', {
+                  locale: fr
+                })}
               />
               <FeildView label="Activité" className="col-span-3" value={attestation.activite} />
               <FeildView label="Adresse" className="col-span-3" value={attestation.address} />

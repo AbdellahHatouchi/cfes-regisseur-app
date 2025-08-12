@@ -9,7 +9,7 @@ export const Navbar = () => {
   const location = useLocation()
 
   const isActive = (path: string) => {
-    return location.pathname.startsWith(path)
+    return location.pathname.startsWith(path) && location.pathname.endsWith(path)
   }
 
   return (
@@ -26,8 +26,8 @@ export const Navbar = () => {
             <span>Accueil</span>
           </Button>
           <Button
-            variant={isActive('/') ? 'default' : 'ghost'}
-            onClick={() => navigate({ to: '/' })}
+            variant={isActive('/fiscal-attestations') ? 'default' : 'ghost'}
+            onClick={() => navigate({ to: '/fiscal-attestations' })}
             className="flex items-center space-x-2"
           >
             <FileText className="h-4 w-4" />

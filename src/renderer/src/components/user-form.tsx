@@ -7,13 +7,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { UserAttributes } from 'type'
 import { toast } from 'sonner'
 
 const userSchema = z.object({
   fullName: z.string().min(3, 'Le nom complet doit contenir au moins 3 caractères'),
   cin: z.string().min(1, 'Le CIN est requis'),
-  address: z.string().min(3, 'L\'adresse doit contenir au moins 3 caractères'),
+  address: z.string().min(3, "L'adresse doit contenir au moins 3 caractères"),
   holeEmptied: z.boolean()
 })
 
@@ -60,7 +59,7 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
           }
         } catch (error) {
           console.error('Error fetching user:', error)
-          toast.error('Erreur lors de la récupération de l\'utilisateur')
+          toast.error("Erreur lors de la récupération de l'utilisateur")
         }
       }
       fetchUser()
@@ -101,12 +100,11 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>{isEditing ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur'}</CardTitle>
+        <CardTitle>{isEditing ? "Modifier l'utilisateur" : 'Nouvel utilisateur'}</CardTitle>
         <CardDescription>
-          {isEditing 
-            ? 'Modifiez les informations de l\'utilisateur' 
-            : 'Ajoutez un nouvel utilisateur bénéficiant du service de vidange des fosses septiques'
-          }
+          {isEditing
+            ? "Modifiez les informations de l'utilisateur"
+            : 'Ajoutez un nouvel utilisateur bénéficiant du service de vidange des fosses septiques'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -119,22 +117,13 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
               placeholder="Nom et prénom"
               disabled={isLoading}
             />
-            {errors.fullName && (
-              <p className="text-sm text-red-500">{errors.fullName.message}</p>
-            )}
+            {errors.fullName && <p className="text-sm text-red-500">{errors.fullName.message}</p>}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="cin">CIN *</Label>
-            <Input
-              id="cin"
-              {...register('cin')}
-              placeholder="Numéro de CIN"
-              disabled={isLoading}
-            />
-            {errors.cin && (
-              <p className="text-sm text-red-500">{errors.cin.message}</p>
-            )}
+            <Input id="cin" {...register('cin')} placeholder="Numéro de CIN" disabled={isLoading} />
+            {errors.cin && <p className="text-sm text-red-500">{errors.cin.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -145,9 +134,7 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
               placeholder="Adresse complète"
               disabled={isLoading}
             />
-            {errors.address && (
-              <p className="text-sm text-red-500">{errors.address.message}</p>
-            )}
+            {errors.address && <p className="text-sm text-red-500">{errors.address.message}</p>}
           </div>
 
           <div className="flex items-center space-x-2">
@@ -170,7 +157,7 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
               Annuler
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Sauvegarde...' : (isEditing ? 'Mettre à jour' : 'Créer')}
+              {isLoading ? 'Sauvegarde...' : isEditing ? 'Mettre à jour' : 'Créer'}
             </Button>
           </div>
         </form>

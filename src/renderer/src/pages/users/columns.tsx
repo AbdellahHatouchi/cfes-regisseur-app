@@ -12,11 +12,18 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { UserAttributes } from 'type'
 
 export type UserType = 'Vidé' | 'Non vidé'
+export type FormattedUser = {
+  id: string
+  fullName: string
+  cin: string
+  address: string
+  holeEmptied: boolean
+  createdAt: string
+}
 
-export const columns: ColumnDef<UserAttributes & { createdAt: string }>[] = [
+export const columns: ColumnDef<FormattedUser>[] = [
   {
     accessorKey: 'fullName',
     header: 'Nom Complet',
@@ -90,7 +97,8 @@ export const columns: ColumnDef<UserAttributes & { createdAt: string }>[] = [
             <DropdownMenuItem
               onClick={() => {
                 // Toggle hole emptied status
-                window.electron.ipcRenderer.invoke('toggleHoleEmptied', user.id)
+                window.electron.ipcRenderer
+                  .invoke('toggleHoleEmptied', user.id)
                   .then((response) => {
                     if (response.success) {
                       // Refresh the page or update the data
@@ -112,7 +120,8 @@ export const columns: ColumnDef<UserAttributes & { createdAt: string }>[] = [
             <DropdownMenuItem
               onClick={() => {
                 if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
-                  window.electron.ipcRenderer.invoke('deleteUser', user.id)
+                  window.electron.ipcRenderer
+                    .invoke('deleteUser', user.id)
                     .then((response) => {
                       if (response.success) {
                         // Refresh the page or update the data

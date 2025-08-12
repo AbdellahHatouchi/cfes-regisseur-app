@@ -31,11 +31,10 @@ export function HomePage() {
   return (
     <div className="space-y-8">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight">
-          Bienvenue dans CFES Régisseur
-        </h1>
+        <h1 className="text-4xl font-bold tracking-tight">Bienvenue dans CFES Régisseur</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Application de gestion pour la commune, incluant les attestations fiscales et la gestion des utilisateurs du service de vidange des fosses septiques.
+          Application de gestion pour la commune, incluant les attestations fiscales et la gestion
+          des utilisateurs du service de vidange des fosses septiques.
         </p>
       </div>
 
@@ -54,10 +53,7 @@ export function HomePage() {
               </div>
             </CardHeader>
             <CardContent>
-              <Button 
-                onClick={() => navigate({ to: card.path })}
-                className="w-full"
-              >
+              <Button onClick={() => navigate({ to: card.path })} className="w-full">
                 Accéder
               </Button>
             </CardContent>

@@ -42,7 +42,7 @@ export const createUser = async (data: User) => {
     )
     return response(true, user, 'Utilisateur créé avec succès')
   } catch (error) {
-    console.error('Erreur lors de la création de l\'utilisateur:', error)
+    console.error("Erreur lors de la création de l'utilisateur:", error)
     return response(false, null, (error as Error).message)
   }
 }
@@ -70,7 +70,7 @@ export const getUserById = async (id: string) => {
     }
     return response(true, user, 'Récupération réussie')
   } catch (error) {
-    console.error('Erreur lors de la récupération de l\'utilisateur:', error)
+    console.error("Erreur lors de la récupération de l'utilisateur:", error)
     return response(false, null, (error as Error).message)
   }
 }
@@ -98,7 +98,7 @@ export const updateUser = async (id: string, data: User) => {
     await user.update(data)
     return response(true, user, 'Mise à jour réussie')
   } catch (error) {
-    console.error('Erreur lors de la mise à jour de l\'utilisateur:', error)
+    console.error("Erreur lors de la mise à jour de l'utilisateur:", error)
     return response(false, null, (error as Error).message)
   }
 }
@@ -113,7 +113,7 @@ export const deleteUser = async (id: string) => {
     await user.destroy()
     return response(true, user, 'Suppression réussie')
   } catch (error) {
-    console.error('Erreur lors de la suppression de l\'utilisateur:', error)
+    console.error("Erreur lors de la suppression de l'utilisateur:", error)
     return response(false, null, (error as Error).message)
   }
 }
@@ -125,10 +125,10 @@ export const toggleHoleEmptied = async (id: string) => {
     if (!user) {
       throw new Error('Utilisateur non trouvé')
     }
-    
+
     const newStatus = !user.holeEmptied
     await user.update({ holeEmptied: newStatus })
-    
+
     return response(true, user, `Statut mis à jour: ${newStatus ? 'Vidé' : 'Non vidé'}`)
   } catch (error) {
     console.error('Erreur lors de la mise à jour du statut:', error)

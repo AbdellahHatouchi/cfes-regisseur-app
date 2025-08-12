@@ -28,7 +28,7 @@ export function UserView({ userId }: UserViewProps) {
         }
       } catch (error) {
         console.error('Error fetching user:', error)
-        toast.error('Erreur lors de la récupération de l\'utilisateur')
+        toast.error("Erreur lors de la récupération de l'utilisateur")
       } finally {
         setIsLoading(false)
       }
@@ -96,10 +96,10 @@ export function UserView({ userId }: UserViewProps) {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <User className="h-5 w-5" />
-            <span>Informations de l'utilisateur</span>
+            <span>Informations de l&apos;utilisateur</span>
           </CardTitle>
           <CardDescription>
-            Détails de l'utilisateur bénéficiant du service de vidange des fosses septiques
+            Détails de l&apos;utilisateur bénéficiant du service de vidange des fosses septiques
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -109,7 +109,7 @@ export function UserView({ userId }: UserViewProps) {
                 <h3 className="font-semibold text-sm text-muted-foreground mb-2">Nom complet</h3>
                 <p className="text-lg">{user.fullName}</p>
               </div>
-              
+
               <div>
                 <h3 className="font-semibold text-sm text-muted-foreground mb-2 flex items-center space-x-2">
                   <Hash className="h-4 w-4" />
@@ -129,7 +129,9 @@ export function UserView({ userId }: UserViewProps) {
               </div>
 
               <div>
-                <h3 className="font-semibold text-sm text-muted-foreground mb-2">Statut de la fosse</h3>
+                <h3 className="font-semibold text-sm text-muted-foreground mb-2">
+                  Statut de la fosse
+                </h3>
                 <Badge variant={user.holeEmptied ? 'default' : 'secondary'} className="text-sm">
                   {user.holeEmptied ? 'Vidée' : 'Non vidée'}
                 </Badge>
@@ -151,7 +153,9 @@ export function UserView({ userId }: UserViewProps) {
             </div>
 
             <div>
-              <h3 className="font-semibold text-sm text-muted-foreground mb-2">Dernière mise à jour</h3>
+              <h3 className="font-semibold text-sm text-muted-foreground mb-2">
+                Dernière mise à jour
+              </h3>
               <p className="text-lg">
                 {format(new Date(user.updatedAt!), 'dd MMMM yyyy', { locale: fr })}
               </p>

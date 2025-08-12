@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { UserForm } from '@/components/user-form'
 import { useNavigate } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/(users)/$userId/')({
+export const Route = createFileRoute('/users/$userId/')({
   component: UserEditPage
 })
 
@@ -19,17 +19,16 @@ export function UserEditPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {userId === 'new' ? 'Nouvel utilisateur' : 'Modifier l\'utilisateur'}
+            {userId === 'new' ? 'Nouvel utilisateur' : "Modifier l'utilisateur"}
           </h1>
           <p className="text-muted-foreground">
-            {userId === 'new' 
+            {userId === 'new'
               ? 'Ajoutez un nouvel utilisateur bénéficiant du service de vidange des fosses septiques'
-              : 'Modifiez les informations de l\'utilisateur'
-            }
+              : "Modifiez les informations de l'utilisateur"}
           </p>
         </div>
       </div>
-      
+
       <UserForm userId={userId} onSuccess={handleSuccess} />
     </div>
   )

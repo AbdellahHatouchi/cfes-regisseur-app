@@ -6,10 +6,7 @@ import { UserAttributes } from '../../../../type'
 interface UserCreationAttributes extends Optional<UserAttributes, 'id'> {}
 
 // Define the User model
-class User
-  extends Model<UserAttributes, UserCreationAttributes>
-  implements UserAttributes
-{
+class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: string
   public fullName!: string
   public cin!: string
