@@ -86,12 +86,15 @@ export const updateUser = async (id: string, data: User) => {
     }
 
     // Check for unique CIN constraint if CIN is being updated
-    if (data.cin && data.cin !== user.cin) {
+
+    if (data.cin && data.cin.toLocaleLowerCase() !== user.get('cin').toLocaleLowerCase()) {
+      console.log('Checking for existing user with CIN:', user.cin)
+
       const existingUser = await User.findOne({
         where: { cin: data.cin }
       })
       if (existingUser) {
-        throw new Error('Un utilisateur avec ce CIN existe déjà')
+        throw new Error('Un utilisateur avec ce CIN existe déjà !')
       }
     }
 

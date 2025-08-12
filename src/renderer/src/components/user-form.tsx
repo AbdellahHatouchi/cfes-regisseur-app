@@ -4,8 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import {
@@ -22,7 +20,7 @@ const userSchema = z.object({
   fullName: z.string().min(3, 'Le nom complet doit contenir au moins 3 caractères'),
   cin: z.string().min(1, 'Le CIN est requis'),
   address: z.string().min(3, "L'adresse doit contenir au moins 3 caractères"),
-  holeEmptied: z.boolean()
+  holeEmptied: z.coerce.boolean()
 })
 
 type UserFormData = z.infer<typeof userSchema>
@@ -38,7 +36,7 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
 
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       fullName: '',
       cin: '',
       address: '',
@@ -78,6 +76,8 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
       let response
       if (userId && userId !== 'new') {
         // Update existing user
+        console.log('Updating user:', userId, data);
+
         response = await window.electron.ipcRenderer.invoke('updateUser', {
           id: userId,
           ...data
@@ -103,8 +103,8 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
 
   const isEditing = userId && userId !== 'new'
   const title = isEditing ? "Modifier l'utilisateur" : 'Nouvel utilisateur'
-  const description = isEditing 
-    ? "Modifiez les informations de l'utilisateur" 
+  const description = isEditing
+    ? "Modifiez les informations de l'utilisateur"
     : 'Ajoutez un nouvel utilisateur bénéficiant du service de vidange des fosses septiques'
   const action = isEditing ? 'Modifier' : 'Ajouter'
 
@@ -131,7 +131,7 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
                 />
               )}
             />
-            
+
             <div className="md:grid md:grid-cols-2 gap-8">
               <FormField
                 control={form.control}
@@ -140,17 +140,13 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
                   <FormItem>
                     <FormLabel>Nom complet</FormLabel>
                     <FormControl>
-                      <Input 
-                        disabled={isLoading} 
-                        placeholder="Nom et prénom" 
-                        {...field} 
-                      />
+                      <Input disabled={isLoading} placeholder="Nom et prénom" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="cin"
@@ -158,17 +154,13 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
                   <FormItem>
                     <FormLabel>CIN</FormLabel>
                     <FormControl>
-                      <Input 
-                        disabled={isLoading} 
-                        placeholder="Numéro de CIN" 
-                        {...field} 
-                      />
+                      <Input disabled={isLoading} placeholder="Numéro de CIN" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="address"
@@ -176,18 +168,14 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
                   <FormItem className="col-span-2">
                     <FormLabel>Adresse</FormLabel>
                     <FormControl>
-                      <Input 
-                        disabled={isLoading} 
-                        placeholder="Adresse complète" 
-                        {...field} 
-                      />
+                      <Input disabled={isLoading} placeholder="Adresse complète" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            
+
             <Button disabled={isLoading} className="ml-auto" type="submit">
               {action}
             </Button>
