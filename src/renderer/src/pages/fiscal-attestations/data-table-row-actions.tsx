@@ -57,7 +57,10 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         <DropdownMenuItem
           disabled={isPending}
           onClick={() =>
-            router.navigate({ to: '/$fiscalATId/view', params: { fiscalATId: row.original.id } })
+            router.navigate({
+              to: '/fiscal-attestations/$fiscalATId/view',
+              params: { fiscalATId: row.original.id }
+            })
           }
         >
           <Eye className="h-4 w-4 mr-2" />
@@ -66,7 +69,10 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         <DropdownMenuItem
           disabled={isPending}
           onClick={() =>
-            router.navigate({ to: '/$fiscalATId', params: { fiscalATId: row.original.id } })
+            router.navigate({
+              to: '/fiscal-attestations/$fiscalATId',
+              params: { fiscalATId: row.original.id }
+            })
           }
         >
           <PenBoxIcon className="h-4 w-4 mr-2" />

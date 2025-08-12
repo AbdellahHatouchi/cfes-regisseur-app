@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { cn } from '@/lib/utils'
 import { FormControl, FormDescription, FormItem, FormLabel, FormMessage } from './form'
 import { Switch } from './switch'

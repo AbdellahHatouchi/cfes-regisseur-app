@@ -9,6 +9,7 @@ export const sequelize = new Sequelize({
   // storage: join(__dirname, 'database.sqlite')
   storage: dbPath
 })
+
 export const TestConnection = async () => {
   try {
     await sequelize.authenticate()

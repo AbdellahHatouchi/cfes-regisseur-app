@@ -11,7 +11,7 @@ import { FiscalAttestationAttributes } from 'type'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
-export const Route = createFileRoute('/(fiscal-attestations)/')({
+export const Route = createFileRoute('/fiscal-attestations/')({
   component: FiscalAttestation
 })
 
@@ -76,7 +76,7 @@ export function FiscalAttestation() {
         <Button
           onClick={() =>
             navigate({
-              to: '/$fiscalATId',
+              to: '$fiscalATId',
               params: {
                 fiscalATId: 'new'
               }
