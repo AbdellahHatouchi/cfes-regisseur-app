@@ -10,6 +10,14 @@ import {
   getFiscalAttestations,
   updateFiscalAttestation
 } from './lib/fiscal-attestation/controller'
+import {
+  createUser,
+  deleteUser,
+  getUserById,
+  getUsers,
+  updateUser,
+  toggleHoleEmptied
+} from './lib/users/controller'
 
 function createWindow(): void {
   // Create the browser window.
@@ -77,6 +85,14 @@ app.whenReady().then(async () => {
   ipcMain.handle('updateFiscalAttestation', (_e, data) => updateFiscalAttestation(data.id, data))
   ipcMain.handle('deleteFiscalAttestation', (_e, id) => deleteFiscalAttestation(id))
   ipcMain.handle('getFiscalAttestationById', (_e, id) => getFiscalAttestationById(id))
+
+  // Users (Citizens)
+  ipcMain.handle('getUsers', getUsers)
+  ipcMain.handle('createUser', (_e, data) => createUser(data))
+  ipcMain.handle('updateUser', (_e, data) => updateUser(data.id, data))
+  ipcMain.handle('deleteUser', (_e, id) => deleteUser(id))
+  ipcMain.handle('getUserById', (_e, id) => getUserById(id))
+  ipcMain.handle('toggleHoleEmptied', (_e, id) => toggleHoleEmptied(id))
 
   createWindow()
 

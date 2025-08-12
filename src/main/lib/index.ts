@@ -9,6 +9,11 @@ export const sequelize = new Sequelize({
   // storage: join(__dirname, 'database.sqlite')
   storage: dbPath
 })
+
+// Import models
+import './fiscal-attestation/model'
+import './users/model'
+
 export const TestConnection = async () => {
   try {
     await sequelize.authenticate()
