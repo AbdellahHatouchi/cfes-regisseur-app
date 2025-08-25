@@ -10,7 +10,7 @@ export type FormattedUser = {
   fullName: string
   cin: string
   address: string
-  holeEmptied: boolean
+  frozen: boolean
   createdAt: string
 }
 
@@ -31,18 +31,16 @@ export const columns: ColumnDef<FormattedUser>[] = [
     cell: ({ row }) => <div className="max-w-[200px] truncate">{row.getValue('address')}</div>
   },
   {
-    accessorKey: 'holeEmptied',
+    accessorKey: 'frozen',
     header: 'Statut',
     cell: ({ row }) => {
-      const holeEmptied = row.getValue('holeEmptied') as boolean
+      const frozen = row.getValue('frozen') as boolean
       return (
-        <Badge variant={holeEmptied ? 'default' : 'secondary'}>
-          {holeEmptied ? 'Vidé' : 'Non vidé'}
-        </Badge>
+        <Badge variant={frozen ? 'secondary' : 'default'}>{frozen ? 'Non Actif' : 'Actif'}</Badge>
       )
     },
     filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id) ? 'true' : 'false')
+      return value.includes(row.getValue(id) ? 'false' : 'true')
     }
   },
   {

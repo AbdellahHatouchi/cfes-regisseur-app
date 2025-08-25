@@ -32,16 +32,15 @@ export function QuittanceStats({ scope, userId }: QuittanceStatsProps) {
 
   useEffect(() => {
     fetchStats()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, userId])
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card>
         <CardHeader>
-          <CardTitle>Quittances non vidées/annulées</CardTitle>
+          <CardTitle>Total (Tous)</CardTitle>
         </CardHeader>
-        <CardContent className="text-2xl font-bold">{countNonVideeOrCancel}</CardContent>
+        <CardContent className="text-2xl font-bold">{totalAll.toFixed(2)} DH</CardContent>
       </Card>
       <Card>
         <CardHeader>
@@ -51,12 +50,10 @@ export function QuittanceStats({ scope, userId }: QuittanceStatsProps) {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Total (Tous)</CardTitle>
+          <CardTitle>Quittances non vidées/annulées</CardTitle>
         </CardHeader>
-        <CardContent className="text-2xl font-bold">{totalAll.toFixed(2)} DH</CardContent>
+        <CardContent className="text-2xl font-bold">{countNonVideeOrCancel}</CardContent>
       </Card>
     </div>
   )
 }
-
-

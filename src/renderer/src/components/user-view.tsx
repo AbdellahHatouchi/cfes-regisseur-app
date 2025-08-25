@@ -99,7 +99,9 @@ export function UserView({ userId }: UserViewProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">Nom complet</h3>
+                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">
+                      Nom complet
+                    </h3>
                     <p className="text-lg">{user.fullName}</p>
                   </div>
 

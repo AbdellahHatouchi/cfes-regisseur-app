@@ -6,7 +6,7 @@ const userSchema = z.object({
   fullName: z.string().min(3, { message: 'Nom complet est requis!' }),
   cin: z.string().min(1, { message: 'CIN est requis!' }),
   address: z.string().min(3, { message: 'Adresse est requise!' }),
-  holeEmptied: z.boolean()
+  frozen: z.coerce.boolean()
 })
 
 // Unified response structure
@@ -36,7 +36,7 @@ export const createUser = async (data: User) => {
         fullName: data.fullName,
         cin: data.cin,
         address: data.address,
-        holeEmptied: data.holeEmptied || false
+        frozen: data.frozen || false
       },
       { raw: true }
     )
@@ -122,18 +122,18 @@ export const deleteUser = async (id: string) => {
 }
 
 // Toggle hole emptied status
-export const toggleHoleEmptied = async (id: string) => {
+export const toggleFrozen = async (id: string) => {
   try {
     const user = await User.findByPk(id)
     if (!user) {
       throw new Error('Utilisateur non trouvé')
     }
 
-    console.log('Updating holeEmptied status to:', user.get('holeEmptied'))
-    const newStatus = !user.get('holeEmptied')
-    console.log('Updating holeEmptied status to:', newStatus)
-    await user.update({ holeEmptied: newStatus })
-    return response(true, user, `Statut mis à jour: ${newStatus ? 'Vidé' : 'Non vidé'}`)
+    console.log('Updating frozen status to:', user.get('frozen'))
+    const newStatus = !user.get('frozen')
+    console.log('Updating frozen status to:', newStatus)
+    await user.update({ frozen: newStatus })
+    return response(true, user, `Statut mis à jour: ${newStatus ? 'actif' : 'Non actif'}`)
   } catch (error) {
     console.error('Erreur lors de la mise à jour du statut:', error)
     return response(false, null, (error as Error).message)

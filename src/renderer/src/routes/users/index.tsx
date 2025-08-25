@@ -24,10 +24,10 @@ export function UsersPage() {
   const listOfFacetedFilter: facetedFilter[] = [
     {
       label: 'Statut',
-      accessorKey: 'holeEmptied',
+      accessorKey: 'frozen',
       options: [
-        { value: 'true', label: 'Vidée', icon: Users },
-        { value: 'false', label: 'Non vidée', icon: Users }
+        { value: 'true', label: 'actif', icon: Users },
+        { value: 'false', label: 'Non actif', icon: Users }
       ]
     }
   ]
@@ -62,7 +62,7 @@ export function UsersPage() {
     fullName: user.fullName,
     cin: user.cin,
     address: user.address,
-    holeEmptied: user.holeEmptied,
+    frozen: user.frozen,
     createdAt: format(user.createdAt!, 'dd MMMM yyyy', { locale: fr })
   }))
 
@@ -73,7 +73,6 @@ export function UsersPage() {
           title={`Utilisateurs`}
           description="Gérez les citoyens bénéficiant du service de vidange des fosses septiques"
         />
-        <div className="mr-4 w-full max-w-3xl"><QuittanceStats scope="global" /></div>
         <Button
           onClick={() =>
             navigate({
@@ -87,6 +86,8 @@ export function UsersPage() {
           <Plus className="mr-2 h-4 w-4" /> Ajouter Nouveau
         </Button>
       </div>
+      <Separator />
+      <QuittanceStats scope="global" />
       <Separator />
       <DataTable
         data={formattedUsers}

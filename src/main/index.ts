@@ -16,7 +16,7 @@ import {
   getUserById,
   getUsers,
   updateUser,
-  toggleHoleEmptied
+  toggleFrozen
 } from './lib/users/controller'
 import {
   createQuittance,
@@ -99,7 +99,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('updateUser', (_e, data) => updateUser(data.id, data))
   ipcMain.handle('deleteUser', (_e, id) => deleteUser(id))
   ipcMain.handle('getUserById', (_e, id) => getUserById(id))
-  ipcMain.handle('toggleHoleEmptied', (_e, id) => toggleHoleEmptied(id))
+  ipcMain.handle('toggleFrozen', (_e, id) => toggleFrozen(id))
 
   // Quittances
   ipcMain.handle('createQuittance', (_e, data) => createQuittance(data))

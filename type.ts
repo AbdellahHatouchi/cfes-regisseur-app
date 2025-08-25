@@ -17,8 +17,7 @@ export interface UserAttributes {
   fullName: string
   cin: string
   address: string
-  holeEmptied: boolean
-  frozen?: boolean
+  frozen: boolean
   createdAt?: Date
   updatedAt?: Date
 }
