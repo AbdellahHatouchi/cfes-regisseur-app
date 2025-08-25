@@ -22,6 +22,7 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import { ColumnDef } from '@tanstack/react-table'
+import { Badge } from '../ui/badge'
 
 interface QuittanceTableProps {
   userId: string
@@ -66,6 +67,26 @@ export function QuittanceTable({ userId, isFrozen }: QuittanceTableProps) {
         id: 'actions',
         cell: ({ row }) => {
           const canChange = row.original.status === 'pending'
+          if (canChange && isFrozen) return <div>Gelé</div>
+          if (canChange === false) {
+            const data = {
+              label: '',
+              variant: 'secondary' as 'default' | 'destructive' | 'outline' | 'secondary'
+            }
+            if (row.original.status === 'videe') {
+              data.label = 'Vidé'
+              data.variant = 'default'
+            }
+            if (row.original.status === 'non_videe') {
+              data.label = 'Non vidé'
+              data.variant = 'destructive'
+            }
+            if (row.original.status === 'cancel') {
+              data.label = 'Annulé'
+              data.variant = 'outline'
+            }
+            return <Badge variant={data.variant}>{data.label}</Badge>
+          }
           return (
             <div className="flex justify-end">
               <Select

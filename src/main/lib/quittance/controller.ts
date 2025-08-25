@@ -20,7 +20,7 @@ export const createQuittance = async (data: unknown) => {
     const user = await User.findByPk(parsed.userId)
     if (!user) throw new Error('Utilisateur non trouvé')
     if ((user.get('frozen') as boolean) === true) {
-      throw new Error("Utilisateur bloqué: création de quittance interdite")
+      throw new Error('Utilisateur bloqué: création de quittance interdite')
     }
     const hasPending = await Quittance.findOne({ where: { userId: parsed.userId, status: 'pending' }, raw: true })
     if (hasPending) {
@@ -50,23 +50,30 @@ export const createQuittance = async (data: unknown) => {
 
 export const getQuittancesByUser = async (userId: string) => {
   try {
-    const quittances = await Quittance.findAll({ where: { userId }, order: [['date', 'DESC']], raw: true })
+    const quittances = await Quittance.findAll({
+      where: { userId },
+      order: [['date', 'DESC']],
+      raw: true
+    })
     return response(true, quittances, 'Récupération réussie')
   } catch (error) {
     console.error('Erreur getQuittancesByUser:', error)
     return response(false, null, (error as Error).message)
   }
 }
-
+interface QuittanceRow {
+  price: number
+  status: 'pending' | 'videe' | 'non_videe' | 'cancel'
+}
 export const getQuittancesTotals = async () => {
   try {
     const rows = await Quittance.findAll({ attributes: ['price', 'status'], raw: true })
     const totalVidee = rows
-      .filter((r: any) => r.status === 'videe')
-      .reduce((acc, r: any) => acc + Number(r.price || 0), 0)
-    const totalAll = rows.reduce((acc, r: any) => acc + Number(r.price || 0), 0)
+      .filter((r: QuittanceRow) => r.status === 'videe')
+      .reduce((acc, r: QuittanceRow) => acc + Number(r.price || 0), 0)
+    const totalAll = rows.reduce((acc, r: QuittanceRow) => acc + Number(r.price || 0), 0)
     const countNonVideeOrCancel = rows.filter(
-      (r: any) => r.status === 'non_videe' || r.status === 'cancel'
+      (r: QuittanceRow) => r.status === 'non_videe' || r.status === 'cancel'
     ).length
     return response(true, { totalVidee, totalAll, countNonVideeOrCancel }, 'Récupération réussie')
   } catch (error) {
@@ -77,13 +84,17 @@ export const getQuittancesTotals = async () => {
 
 export const getQuittancesTotalByUser = async (userId: string) => {
   try {
-    const rows = await Quittance.findAll({ where: { userId }, attributes: ['price', 'status'], raw: true })
+    const rows = await Quittance.findAll({
+      where: { userId },
+      attributes: ['price', 'status'],
+      raw: true
+    })
     const totalVidee = rows
-      .filter((r: any) => r.status === 'videe')
-      .reduce((acc, r: any) => acc + Number(r.price || 0), 0)
-    const totalAll = rows.reduce((acc, r: any) => acc + Number(r.price || 0), 0)
+      .filter((r: QuittanceRow) => r.status === 'videe')
+      .reduce((acc, r: QuittanceRow) => acc + Number(r.price || 0), 0)
+    const totalAll = rows.reduce((acc, r: QuittanceRow) => acc + Number(r.price || 0), 0)
     const countNonVideeOrCancel = rows.filter(
-      (r: any) => r.status === 'non_videe' || r.status === 'cancel'
+      (r: QuittanceRow) => r.status === 'non_videe' || r.status === 'cancel'
     ).length
     return response(true, { totalVidee, totalAll, countNonVideeOrCancel }, 'Récupération réussie')
   } catch (error) {
@@ -92,7 +103,10 @@ export const getQuittancesTotalByUser = async (userId: string) => {
   }
 }
 
-export const updateQuittanceStatus = async (id: string, status: 'pending' | 'videe' | 'non_videe' | 'cancel') => {
+export const updateQuittanceStatus = async (
+  id: string,
+  status: 'pending' | 'videe' | 'non_videe' | 'cancel'
+) => {
   try {
     const q = await Quittance.findByPk(id)
     if (!q) throw new Error('Quittance non trouvée')
@@ -114,7 +128,7 @@ export const updateQuittanceStatus = async (id: string, status: 'pending' | 'vid
 
 const recomputeUserFrozen = async (userId: string) => {
   const rows = await Quittance.findAll({ where: { userId }, attributes: ['status'], raw: true })
-  const nonVideeCount = rows.filter((r: any) => r.status === 'non_videe').length
+  const nonVideeCount = rows.filter((r: QuittanceRow) => r.status === 'non_videe').length
   const user = await User.findByPk(userId)
   if (user) {
     const frozen = nonVideeCount >= 3
@@ -123,5 +137,3 @@ const recomputeUserFrozen = async (userId: string) => {
     }
   }
 }
-
-

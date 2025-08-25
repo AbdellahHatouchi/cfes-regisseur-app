@@ -64,5 +64,3 @@ Quittance.init(
 )
 
 export default Quittance
-
-

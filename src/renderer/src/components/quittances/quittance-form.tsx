@@ -85,5 +85,3 @@ export function QuittanceForm({ userId, onCreated, onClose, isFrozen }: Quittanc
     </div>
   )
 }
-
-
