@@ -73,9 +73,14 @@ export const getQuittancesByUser = async (userId: string) => {
 export const getQuittancesTotals = async () => {
   try {
     const rows = await Quittance.findAll({ attributes: ['price', 'status'], raw: true })
-    const total = rows.filter((r: any) => r.status === 'videe').reduce((acc, r: any) => acc + Number(r.price || 0), 0)
-    const countNonVidee = rows.filter((r: any) => r.status === 'non_videe').length
-    return response(true, { total }, 'Récupération réussie')
+    const totalVidee = rows
+      .filter((r: any) => r.status === 'videe')
+      .reduce((acc, r: any) => acc + Number(r.price || 0), 0)
+    const totalAll = rows.reduce((acc, r: any) => acc + Number(r.price || 0), 0)
+    const countNonVideeOrCancel = rows.filter(
+      (r: any) => r.status === 'non_videe' || r.status === 'cancel'
+    ).length
+    return response(true, { totalVidee, totalAll, countNonVideeOrCancel }, 'Récupération réussie')
   } catch (error) {
     console.error('Erreur getQuittancesTotals:', error)
     return response(false, null, (error as Error).message)
@@ -85,9 +90,14 @@ export const getQuittancesTotals = async () => {
 export const getQuittancesTotalByUser = async (userId: string) => {
   try {
     const rows = await Quittance.findAll({ where: { userId }, attributes: ['price', 'status'], raw: true })
-    const total = rows.filter((r: any) => r.status === 'videe').reduce((acc, r: any) => acc + Number(r.price || 0), 0)
-    const countNonVidee = rows.filter((r: any) => r.status === 'non_videe').length
-    return response(true, { total, countNonVidee }, 'Récupération réussie')
+    const totalVidee = rows
+      .filter((r: any) => r.status === 'videe')
+      .reduce((acc, r: any) => acc + Number(r.price || 0), 0)
+    const totalAll = rows.reduce((acc, r: any) => acc + Number(r.price || 0), 0)
+    const countNonVideeOrCancel = rows.filter(
+      (r: any) => r.status === 'non_videe' || r.status === 'cancel'
+    ).length
+    return response(true, { totalVidee, totalAll, countNonVideeOrCancel }, 'Récupération réussie')
   } catch (error) {
     console.error('Erreur getQuittancesTotalByUser:', error)
     return response(false, null, (error as Error).message)

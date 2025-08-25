@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { DataTable } from '@/components/table/data-table'
@@ -8,6 +7,7 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { QuittanceAttributes } from 'type'
 import { QuittanceForm } from './quittance-form'
+import { QuittanceStats } from './quittance-stats'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface QuittanceTableProps {
@@ -17,17 +17,10 @@ interface QuittanceTableProps {
 export function QuittanceTable({ userId }: QuittanceTableProps) {
   const [rows, setRows] = useState<QuittanceAttributes[]>([])
   const [open, setOpen] = useState(false)
-  const [totalVidee, setTotalVidee] = useState<number>(0)
-  const [countNonVidee, setCountNonVidee] = useState<number>(0)
 
   const fetchRows = async () => {
     const res = await window.electron.ipcRenderer.invoke('getQuittancesByUser', userId)
     if (res.success) setRows(res.data)
-    const t = await window.electron.ipcRenderer.invoke('getQuittancesTotalByUser', userId)
-    if (t.success) {
-      setTotalVidee(t.data.total)
-      setCountNonVidee(t.data.countNonVidee ?? 0)
-    }
   }
 
   useEffect(() => {
@@ -82,18 +75,7 @@ export function QuittanceTable({ userId }: QuittanceTableProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Nombre de quittances non vidées</CardTitle>
-          </CardHeader>
-          <CardContent className="text-2xl font-bold">{countNonVidee}</CardContent>
-        </Card>
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Total des quittances (Vidé)</CardTitle>
-          </CardHeader>
-          <CardContent className="text-2xl font-bold">{totalVidee.toFixed(2)} DH</CardContent>
-        </Card>
+        <QuittanceStats scope="user" userId={userId} />
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
