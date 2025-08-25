@@ -18,6 +18,19 @@ export interface UserAttributes {
   cin: string
   address: string
   holeEmptied: boolean
+  frozen?: boolean
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+// Define the attributes for the Quittance model
+export interface QuittanceAttributes {
+  id: string
+  userId: string
+  number: string
+  date: Date
+  price: number
+  status: 'pending' | 'videe' | 'non_videe' | 'cancel'
   createdAt?: Date
   updatedAt?: Date
 }

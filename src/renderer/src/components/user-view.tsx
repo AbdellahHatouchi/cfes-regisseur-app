@@ -9,6 +9,8 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { useRouter } from '@tanstack/react-router'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { QuittanceTable } from './quittances/quittance-table'
 
 interface UserViewProps {
   userId: string
@@ -38,27 +40,6 @@ export function UserView({ userId }: UserViewProps) {
 
     fetchUser()
   }, [userId])
-
-  const handleToggleStatus = async () => {
-    if (!user) return
-
-    try {
-      const response = await window.electron.ipcRenderer.invoke('toggleHoleEmptied', userId)
-      if (response.success) {
-        console.log(response);
-
-        setUser((prevUser) =>
-          prevUser ? { ...prevUser, holeEmptied: !prevUser.holeEmptied } : prevUser
-        )
-        toast.success(response.message)
-      } else {
-        toast.error(response.message)
-      }
-    } catch (error) {
-      console.error('Error toggling status:', error)
-      toast.error('Erreur lors de la mise à jour du statut')
-    }
-  }
 
   if (isLoading) {
     return (
@@ -98,93 +79,90 @@ export function UserView({ userId }: UserViewProps) {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <User className="h-5 w-5" />
-            <span>Informations de l&apos;utilisateur</span>
-          </CardTitle>
-          <CardDescription>
-            Détails de l&apos;utilisateur bénéficiant du service de vidange des fosses septiques
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-sm text-muted-foreground mb-2">Nom complet</h3>
-                <p className="text-lg">{user.fullName}</p>
+      <Tabs defaultValue="info">
+        <TabsList>
+          <TabsTrigger value="info">Infos utilisateur</TabsTrigger>
+          <TabsTrigger value="quittances">Quittances</TabsTrigger>
+        </TabsList>
+        <TabsContent value="info">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <User className="h-5 w-5" />
+                <span>Informations de l&apos;utilisateur</span>
+              </CardTitle>
+              <CardDescription>
+                Détails de l&apos;utilisateur bénéficiant du service de vidange des fosses septiques
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">Nom complet</h3>
+                    <p className="text-lg">{user.fullName}</p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-sm text-muted-foreground mb-2 flex items-center space-x-2">
+                      <Hash className="h-4 w-4" />
+                      <span>CIN</span>
+                    </h3>
+                    <p className="text-lg font-mono">{user.cin}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-sm text-muted-foreground mb-2 flex items-center space-x-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>Adresse</span>
+                    </h3>
+                    <p className="text-lg">{user.address}</p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">Statut</h3>
+                    <Badge variant={user.frozen ? 'destructive' : 'secondary'} className="text-sm">
+                      {user.frozen ? 'Bloqué' : 'Actif'}
+                    </Badge>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <h3 className="font-semibold text-sm text-muted-foreground mb-2 flex items-center space-x-2">
-                  <Hash className="h-4 w-4" />
-                  <span>CIN</span>
-                </h3>
-                <p className="text-lg font-mono">{user.cin}</p>
+              <Separator />
+
+              <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-2 flex items-center space-x-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>Date de création</span>
+                  </h3>
+                  <p className="text-lg">
+                    {user.createdAt
+                      ? format(new Date(user.createdAt!), 'dd MMMM yyyy', { locale: fr })
+                      : '--'}
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-2">
+                    Dernière mise à jour
+                  </h3>
+                  <p className="text-lg">
+                    {user.updatedAt
+                      ? format(new Date(user.updatedAt!), 'dd MMMM yyyy', { locale: fr })
+                      : '--'}
+                  </p>
+                </div>
               </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-sm text-muted-foreground mb-2 flex items-center space-x-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>Adresse</span>
-                </h3>
-                <p className="text-lg">{user.address}</p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-sm text-muted-foreground mb-2">
-                  Statut de la fosse
-                </h3>
-                <Badge variant={user.holeEmptied ? 'default' : 'secondary'} className="text-sm">
-                  {user.holeEmptied ? 'Vidée' : 'Non vidée'}
-                </Badge>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
-            <div>
-              <h3 className="font-semibold text-sm text-muted-foreground mb-2 flex items-center space-x-2">
-                <Calendar className="h-4 w-4" />
-                <span>Date de création</span>
-              </h3>
-              <p className="text-lg">
-                {user.createdAt
-                  ? format(new Date(user.createdAt!), 'dd MMMM yyyy', { locale: fr })
-                  : '--'}
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-sm text-muted-foreground mb-2">
-                Dernière mise à jour
-              </h3>
-              <p className="text-lg">
-                {user.updatedAt
-                  ? format(new Date(user.updatedAt!), 'dd MMMM yyyy', { locale: fr })
-                  : '--'}
-              </p>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="flex justify-center">
-            <Button
-              onClick={handleToggleStatus}
-              variant={user.holeEmptied ? 'secondary' : 'default'}
-              className="w-full max-w-xs"
-            >
-              {user.holeEmptied ? 'Marquer comme non vidée' : 'Marquer comme vidée'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="quittances">
+          <QuittanceTable userId={user.id} />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

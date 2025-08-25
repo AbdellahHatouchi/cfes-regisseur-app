@@ -12,6 +12,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public cin!: string
   public address!: string
   public holeEmptied!: boolean
+  public frozen!: boolean
 
   // timestamps!
   public readonly createdAt!: Date
@@ -39,6 +40,11 @@ User.init(
       allowNull: false
     },
     holeEmptied: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    frozen: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false

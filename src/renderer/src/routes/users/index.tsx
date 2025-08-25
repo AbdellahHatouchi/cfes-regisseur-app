@@ -17,6 +17,8 @@ export const Route = createFileRoute('/users/')({
 
 export function UsersPage() {
   const [users, setUsers] = useState<(UserAttributes & { createdAt: string })[]>([])
+  const [total, setTotal] = useState<number>(0)
+  const [countNonVidee, setCountNonVidee] = useState<number>(0)
   const navigate = Route.useNavigate()
 
   const listOfFacetedFilter: facetedFilter[] = [
@@ -45,6 +47,11 @@ export function UsersPage() {
         } else {
           alert(response.message)
         }
+        const t = await window.electron.ipcRenderer.invoke('getQuittancesTotals')
+        if (t.success) {
+          setTotal(t.data.total)
+          setCountNonVidee(t.data.countNonVidee ?? 0)
+        }
       } catch (error) {
         console.error('Erreur lors de la récupération des utilisateurs:', error)
         alert('Erreur lors de la récupération des utilisateurs')
@@ -70,6 +77,16 @@ export function UsersPage() {
           title={`Utilisateurs`}
           description="Gérez les citoyens bénéficiant du service de vidange des fosses septiques"
         />
+        <div className="flex items-center gap-6 mr-4">
+          <div className="text-right">
+            <div className="text-sm text-muted-foreground">Quittances non vidées</div>
+            <div className="text-xl font-bold">{countNonVidee}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-muted-foreground">Total (Vidé)</div>
+            <div className="text-xl font-bold">{total.toFixed(2)} DH</div>
+          </div>
+        </div>
         <Button
           onClick={() =>
             navigate({
