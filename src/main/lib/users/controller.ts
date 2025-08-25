@@ -129,9 +129,10 @@ export const toggleHoleEmptied = async (id: string) => {
       throw new Error('Utilisateur non trouvé')
     }
 
-    const newStatus = !user.holeEmptied
+    console.log('Updating holeEmptied status to:', user.get('holeEmptied'))
+    const newStatus = !user.get('holeEmptied')
+    console.log('Updating holeEmptied status to:', newStatus)
     await user.update({ holeEmptied: newStatus })
-
     return response(true, user, `Statut mis à jour: ${newStatus ? 'Vidé' : 'Non vidé'}`)
   } catch (error) {
     console.error('Erreur lors de la mise à jour du statut:', error)

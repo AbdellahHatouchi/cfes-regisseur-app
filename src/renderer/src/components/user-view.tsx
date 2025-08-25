@@ -8,6 +8,7 @@ import { UserAttributes } from 'type'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
+import { useRouter } from '@tanstack/react-router'
 
 interface UserViewProps {
   userId: string
@@ -16,6 +17,7 @@ interface UserViewProps {
 export function UserView({ userId }: UserViewProps) {
   const [user, setUser] = useState<UserAttributes | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -43,7 +45,11 @@ export function UserView({ userId }: UserViewProps) {
     try {
       const response = await window.electron.ipcRenderer.invoke('toggleHoleEmptied', userId)
       if (response.success) {
-        setUser(response.data)
+        console.log(response);
+
+        setUser((prevUser) =>
+          prevUser ? { ...prevUser, holeEmptied: !prevUser.holeEmptied } : prevUser
+        )
         toast.success(response.message)
       } else {
         toast.error(response.message)
@@ -75,7 +81,7 @@ export function UserView({ userId }: UserViewProps) {
       <div className="flex items-center space-x-4">
         <Button
           variant="outline"
-          onClick={() => window.history.back()}
+          onClick={() => router.navigate({ to: '/users' })}
           className="flex items-center space-x-2"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -83,7 +89,7 @@ export function UserView({ userId }: UserViewProps) {
         </Button>
         <Button
           onClick={() => {
-            window.location.href = `/users/${userId}`
+            router.navigate({ to: '/users/$userId', params: { userId: user.id } })
           }}
           className="flex items-center space-x-2"
         >
@@ -141,14 +147,16 @@ export function UserView({ userId }: UserViewProps) {
 
           <Separator />
 
-          <div className="space-y-4">
+          <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
             <div>
               <h3 className="font-semibold text-sm text-muted-foreground mb-2 flex items-center space-x-2">
                 <Calendar className="h-4 w-4" />
                 <span>Date de création</span>
               </h3>
               <p className="text-lg">
-                {format(new Date(user.createdAt!), 'dd MMMM yyyy', { locale: fr })}
+                {user.createdAt
+                  ? format(new Date(user.createdAt!), 'dd MMMM yyyy', { locale: fr })
+                  : '--'}
               </p>
             </div>
 
@@ -157,7 +165,9 @@ export function UserView({ userId }: UserViewProps) {
                 Dernière mise à jour
               </h3>
               <p className="text-lg">
-                {format(new Date(user.updatedAt!), 'dd MMMM yyyy', { locale: fr })}
+                {user.updatedAt
+                  ? format(new Date(user.updatedAt!), 'dd MMMM yyyy', { locale: fr })
+                  : '--'}
               </p>
             </div>
           </div>
