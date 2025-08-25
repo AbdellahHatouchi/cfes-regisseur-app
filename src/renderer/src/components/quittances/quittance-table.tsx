@@ -32,6 +32,7 @@ type QuittanceCols = QuittanceAttributes
 export function QuittanceTable({ userId, isFrozen }: QuittanceTableProps) {
   const [rows, setRows] = useState<QuittanceAttributes[]>([])
   const [open, setOpen] = useState(false)
+  const hasPending = rows.some((r) => r.status === 'pending')
 
   const fetchRows = async () => {
     const res = await window.electron.ipcRenderer.invoke('getQuittancesByUser', userId)
@@ -97,11 +98,11 @@ export function QuittanceTable({ userId, isFrozen }: QuittanceTableProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-4">
-        <QuittanceStats scope="user" userId={userId} />
+        <QuittanceStats key={rows.length + (rows[0]?.status || '')} scope="user" userId={userId} />
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <div className="flex justify-end w-full">
-              <Button disabled={isFrozen}>
+              <Button disabled={isFrozen || hasPending}>
                 <Plus className="mr-2 h-4 w-4" /> Nouvelle quittance
               </Button>
             </div>

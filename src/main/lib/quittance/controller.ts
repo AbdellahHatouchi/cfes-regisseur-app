@@ -22,6 +22,10 @@ export const createQuittance = async (data: unknown) => {
     if ((user.get('frozen') as boolean) === true) {
       throw new Error("Utilisateur bloqué: création de quittance interdite")
     }
+    const hasPending = await Quittance.findOne({ where: { userId: parsed.userId, status: 'pending' }, raw: true })
+    if (hasPending) {
+      throw new Error("Une quittance en attente existe déjà. Veuillez mettre à jour son statut avant d'en créer une nouvelle.")
+    }
 
     // Ensure number uniqueness and optional year consistency
     const existing = await Quittance.findOne({ where: { number: parsed.number }, raw: true })
