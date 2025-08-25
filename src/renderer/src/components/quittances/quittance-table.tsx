@@ -119,7 +119,11 @@ export function QuittanceTable({ userId, isFrozen }: QuittanceTableProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-4">
-        <QuittanceStats key={rows.length + (rows[0]?.status || '')} scope="user" userId={userId} />
+        <QuittanceStats
+          key={rows.length + (rows[rows.length - 1]?.status || '')}
+          scope="user"
+          userId={userId}
+        />
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <div className="flex justify-end w-full">
