@@ -27,7 +27,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const [isPending, startTransition] = useTransition()
   const onDelete = () => {
     startTransition(() => {
-      ; (async () => {
+      ;(async () => {
         try {
           const res = await window.electron.ipcRenderer.invoke('deleteUser', row.original.id)
           if (res.success) {
@@ -80,9 +80,9 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
-            // Toggle hole emptied status
+            // Toggle status
             window.electron.ipcRenderer
-              .invoke('toggleHoleEmptied', row.original.id)
+              .invoke('toggleFrozen', row.original.id)
               .then((response) => {
                 if (response.success) {
                   // Refresh the page or update the data

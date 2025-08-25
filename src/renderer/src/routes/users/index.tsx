@@ -4,6 +4,7 @@ import { Heading } from '@/components/ui/heading'
 import { Separator } from '@/components/ui/separator'
 import { createFileRoute } from '@tanstack/react-router'
 import { Plus, Users } from 'lucide-react'
+import { QuittanceStats } from '@/components/quittances/quittance-stats'
 import { facetedFilter } from '@/constants'
 import { columns } from '@/pages/users/columns'
 import { useEffect, useState } from 'react'
@@ -17,15 +18,16 @@ export const Route = createFileRoute('/users/')({
 
 export function UsersPage() {
   const [users, setUsers] = useState<(UserAttributes & { createdAt: string })[]>([])
+  // stats moved into QuittanceStats component
   const navigate = Route.useNavigate()
 
   const listOfFacetedFilter: facetedFilter[] = [
     {
       label: 'Statut',
-      accessorKey: 'holeEmptied',
+      accessorKey: 'frozen',
       options: [
-        { value: 'true', label: 'Vidée', icon: Users },
-        { value: 'false', label: 'Non vidée', icon: Users }
+        { value: 'true', label: 'actif', icon: Users },
+        { value: 'false', label: 'Non actif', icon: Users }
       ]
     }
   ]
@@ -45,6 +47,7 @@ export function UsersPage() {
         } else {
           alert(response.message)
         }
+        // global stats handled by QuittanceStats component
       } catch (error) {
         console.error('Erreur lors de la récupération des utilisateurs:', error)
         alert('Erreur lors de la récupération des utilisateurs')
@@ -59,7 +62,7 @@ export function UsersPage() {
     fullName: user.fullName,
     cin: user.cin,
     address: user.address,
-    holeEmptied: user.holeEmptied,
+    frozen: user.frozen,
     createdAt: format(user.createdAt!, 'dd MMMM yyyy', { locale: fr })
   }))
 
@@ -83,6 +86,8 @@ export function UsersPage() {
           <Plus className="mr-2 h-4 w-4" /> Ajouter Nouveau
         </Button>
       </div>
+      <Separator />
+      <QuittanceStats scope="global" />
       <Separator />
       <DataTable
         data={formattedUsers}

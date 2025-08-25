@@ -16,8 +16,15 @@ import {
   getUserById,
   getUsers,
   updateUser,
-  toggleHoleEmptied
+  toggleFrozen
 } from './lib/users/controller'
+import {
+  createQuittance,
+  getQuittancesByUser,
+  getQuittancesTotals,
+  getQuittancesTotalByUser,
+  updateQuittanceStatus
+} from './lib/quittance/controller'
 
 function createWindow(): void {
   // Create the browser window.
@@ -92,7 +99,14 @@ app.whenReady().then(async () => {
   ipcMain.handle('updateUser', (_e, data) => updateUser(data.id, data))
   ipcMain.handle('deleteUser', (_e, id) => deleteUser(id))
   ipcMain.handle('getUserById', (_e, id) => getUserById(id))
-  ipcMain.handle('toggleHoleEmptied', (_e, id) => toggleHoleEmptied(id))
+  ipcMain.handle('toggleFrozen', (_e, id) => toggleFrozen(id))
+
+  // Quittances
+  ipcMain.handle('createQuittance', (_e, data) => createQuittance(data))
+  ipcMain.handle('getQuittancesByUser', (_e, userId) => getQuittancesByUser(userId))
+  ipcMain.handle('getQuittancesTotals', getQuittancesTotals)
+  ipcMain.handle('getQuittancesTotalByUser', (_e, userId) => getQuittancesTotalByUser(userId))
+  ipcMain.handle('updateQuittanceStatus', (_e, data) => updateQuittanceStatus(data.id, data.status))
 
   createWindow()
 

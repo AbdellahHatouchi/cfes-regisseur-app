@@ -20,7 +20,7 @@ const userSchema = z.object({
   fullName: z.string().min(3, 'Le nom complet doit contenir au moins 3 caractères'),
   cin: z.string().min(1, 'Le CIN est requis'),
   address: z.string().min(3, "L'adresse doit contenir au moins 3 caractères"),
-  holeEmptied: z.coerce.boolean()
+  frozen: z.coerce.boolean()
 })
 
 type UserFormData = z.infer<typeof userSchema>
@@ -40,7 +40,7 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
       fullName: '',
       cin: '',
       address: '',
-      holeEmptied: false
+      frozen: false
     }
   })
 
@@ -56,7 +56,7 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
               fullName: userData.fullName,
               cin: userData.cin,
               address: userData.address,
-              holeEmptied: userData.holeEmptied
+              frozen: userData.frozen
             })
           } else {
             toast.error(response.message)
@@ -75,9 +75,6 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
     try {
       let response
       if (userId && userId !== 'new') {
-        // Update existing user
-        console.log('Updating user:', userId, data);
-
         response = await window.electron.ipcRenderer.invoke('updateUser', {
           id: userId,
           ...data
@@ -119,11 +116,11 @@ export function UserForm({ userId, onSuccess }: UserFormProps) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 w-full">
             <FormField
               control={form.control}
-              name="holeEmptied"
+              name="frozen"
               render={({ field }) => (
                 <SwitchWidget
-                  label="Fosse vidée"
-                  description="Activez cette option si la fosse septique a été vidée."
+                  label="Statut"
+                  description="Définir si l'utilisateur est actif ou non"
                   field={{
                     value: Boolean(field.value),
                     onChange: field.onChange
