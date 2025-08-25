@@ -25,10 +25,11 @@ import { ColumnDef } from '@tanstack/react-table'
 
 interface QuittanceTableProps {
   userId: string
+  isFrozen?: boolean
 }
 type QuittanceCols = QuittanceAttributes
 
-export function QuittanceTable({ userId }: QuittanceTableProps) {
+export function QuittanceTable({ userId, isFrozen }: QuittanceTableProps) {
   const [rows, setRows] = useState<QuittanceAttributes[]>([])
   const [open, setOpen] = useState(false)
 
@@ -60,26 +61,32 @@ export function QuittanceTable({ userId }: QuittanceTableProps) {
         cell: ({ row }) => `${Number(row.original.price).toFixed(2)} DH`
       },
       {
-        accessorKey: 'status',
-        header: 'Statut',
-        cell: ({ row }) => (
-          <Select
-            value={row.original.status}
-            onValueChange={(v) =>
-              handleStatusChange(row.original.id, v as QuittanceAttributes['status'])
-            }
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">En attente</SelectItem>
-              <SelectItem value="videe">Vidé</SelectItem>
-              <SelectItem value="non_videe">Non vidé</SelectItem>
-              <SelectItem value="cancel">Annulé</SelectItem>
-            </SelectContent>
-          </Select>
-        )
+        header: 'Actions',
+        id: 'actions',
+        cell: ({ row }) => {
+          const canChange = row.original.status === 'pending'
+          return (
+            <div className="flex justify-end">
+              <Select
+                value={row.original.status}
+                onValueChange={(v) =>
+                  handleStatusChange(row.original.id, v as QuittanceAttributes['status'])
+                }
+                disabled={!canChange}
+              >
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {/* no option to go back to pending */}
+                  <SelectItem value="videe">Vidé</SelectItem>
+                  <SelectItem value="non_videe">Non vidé</SelectItem>
+                  <SelectItem value="cancel">Annulé</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )
+        }
       }
     ],
     []
@@ -94,7 +101,7 @@ export function QuittanceTable({ userId }: QuittanceTableProps) {
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <div className="flex justify-end w-full">
-              <Button>
+              <Button disabled={isFrozen}>
                 <Plus className="mr-2 h-4 w-4" /> Nouvelle quittance
               </Button>
             </div>
@@ -103,7 +110,12 @@ export function QuittanceTable({ userId }: QuittanceTableProps) {
             <DialogHeader>
               <DialogTitle>Créer une nouvelle quittance</DialogTitle>
             </DialogHeader>
-            <QuittanceForm userId={userId} onCreated={fetchRows} onClose={() => setOpen(false)} />
+            <QuittanceForm
+              userId={userId}
+              isFrozen={isFrozen}
+              onCreated={fetchRows}
+              onClose={() => setOpen(false)}
+            />
           </DialogContent>
         </Dialog>
       </div>

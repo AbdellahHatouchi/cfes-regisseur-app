@@ -1,53 +1,37 @@
 import * as z from 'zod'
 import Quittance from './model'
 import User from '../users/model'
-import { Op } from 'sequelize'
+// import { Op } from 'sequelize'
 
 const response = (success: boolean, data: unknown, message: string) => ({ success, data, message })
 
 const quittanceSchema = z.object({
   userId: z.string().uuid(),
+  number: z.string().regex(/^\d+\/\d{4}$/i, 'Format attendu: nombre/année'),
   price: z.number().positive().default(200),
   date: z.coerce.date().default(new Date())
 })
 
-const formatNumber = (seq: number, year: number) => `${seq}/${year}`
-
-const getNextSequenceForYear = async (year: number) => {
-  const start = new Date(`${year}-01-01T00:00:00.000Z`)
-  const end = new Date(`${year}-12-31T23:59:59.999Z`)
-
-  const existing = await Quittance.findAll({
-    where: { date: { [Op.between]: [start, end] } },
-    attributes: ['number'],
-    order: [['createdAt', 'DESC']],
-    raw: true
-  })
-
-  let max = 0
-  for (const q of existing) {
-    const [num, y] = (q as any).number.split('/')
-    if (Number(y) === year) {
-      const n = Number(num)
-      if (!Number.isNaN(n)) max = Math.max(max, n)
-    }
-  }
-  return max + 1
-}
+// numbering now provided by the UI; backend ensures uniqueness and format only
 
 export const createQuittance = async (data: unknown) => {
   try {
     const parsed = quittanceSchema.parse(data)
     const user = await User.findByPk(parsed.userId)
     if (!user) throw new Error('Utilisateur non trouvé')
+    if ((user.get('frozen') as boolean) === true) {
+      throw new Error("Utilisateur bloqué: création de quittance interdite")
+    }
 
-    const year = new Date(parsed.date).getFullYear()
-    const seq = await getNextSequenceForYear(year)
-    const number = formatNumber(seq, year)
+    // Ensure number uniqueness and optional year consistency
+    const existing = await Quittance.findOne({ where: { number: parsed.number }, raw: true })
+    if (existing) {
+      throw new Error('Numéro de quittance déjà utilisé')
+    }
 
     const created = await Quittance.create({
       userId: parsed.userId,
-      number,
+      number: parsed.number,
       date: parsed.date,
       price: parsed.price ?? 200,
       status: 'pending'
@@ -108,6 +92,13 @@ export const updateQuittanceStatus = async (id: string, status: 'pending' | 'vid
   try {
     const q = await Quittance.findByPk(id)
     if (!q) throw new Error('Quittance non trouvée')
+    const current = q.get('status') as string
+    if (current !== 'pending') {
+      throw new Error("Le statut ne peut être modifié qu'à partir de 'pending'")
+    }
+    if (status === 'pending') {
+      throw new Error("Le statut ne peut pas être remis à 'pending'")
+    }
     await q.update({ status })
     await recomputeUserFrozen(q.get('userId') as string)
     return response(true, q, 'Statut mis à jour')

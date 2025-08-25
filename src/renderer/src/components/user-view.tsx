@@ -162,7 +162,7 @@ export function UserView({ userId }: UserViewProps) {
           </Card>
         </TabsContent>
         <TabsContent value="quittances">
-          <QuittanceTable userId={user.id} />
+          <QuittanceTable userId={user.id} isFrozen={!!user.frozen} />
         </TabsContent>
       </Tabs>
     </div>
