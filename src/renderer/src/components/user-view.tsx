@@ -11,6 +11,8 @@ import { toast } from 'sonner'
 import { useRouter } from '@tanstack/react-router'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { QuittanceTable } from './quittances/quittance-table'
+import { PDFViewer } from '@react-pdf/renderer'
+import EngagementPDF from './pdf/engagement-pdf'
 
 interface UserViewProps {
   userId: string
@@ -83,6 +85,7 @@ export function UserView({ userId }: UserViewProps) {
         <TabsList>
           <TabsTrigger value="info">Infos utilisateur</TabsTrigger>
           <TabsTrigger value="quittances">Quittances</TabsTrigger>
+          <TabsTrigger value="engagement">Engagement</TabsTrigger>
         </TabsList>
         <TabsContent value="info">
           <Card>
@@ -163,6 +166,18 @@ export function UserView({ userId }: UserViewProps) {
         </TabsContent>
         <TabsContent value="quittances">
           <QuittanceTable userId={user.id} isFrozen={!!user.frozen} />
+        </TabsContent>
+        <TabsContent value="engagement">
+          <PDFViewer className="rounded-lg border" width="100%" height="800px" showToolbar={true}>
+            <EngagementPDF
+              engagement={{
+                name: user.fullName,
+                cin: user.cin,
+                address: user.address,
+                createdAt: new Date().toISOString()
+              }}
+            />
+          </PDFViewer>
         </TabsContent>
       </Tabs>
     </div>
