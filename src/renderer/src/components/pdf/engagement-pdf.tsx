@@ -22,13 +22,13 @@ const EngagementPDF: React.FC<EngagementPDFProps> = ({ engagement }) => {
 
   return (
     <Document>
-      <Page size="A4" style={tw('text-primary p-8 font-sans')}>
+      <Page size="A4" style={tw('text-primary p-8 font-alexBold')}>
         {/* Header */}
         <HeaderPDF />
 
         {/* Title */}
         <View style={tw('text-center mt-6 mb-4')}>
-          <Text style={tw('text-lg font-alexBold')}>
+          <Text style={tw('text-lg font-alexUltraBold')}>
             التزام الاستفادة من خدمة تفريغ الحفرة الصحية
           </Text>
         </View>
@@ -38,17 +38,19 @@ const EngagementPDF: React.FC<EngagementPDFProps> = ({ engagement }) => {
           <Text>أنا الممضي أسفله؛</Text>
           <View style={tw('flex flex-row justify-between items-center mb-2')}>
             <Text>Nom complet : </Text>
-            <Text style={tw('font-alexBold')}>{name}</Text>
+            <Text style={tw('font-alexUltraBold capitalize')}>{name}</Text>
             <Text>الاسم الكامل؛</Text>
           </View>
           <View style={tw('flex flex-row justify-between items-center mb-2')}>
             <Text>CIN : </Text>
-            <Text style={tw('font-alexBold')}>{cin}</Text>
+            <Text style={tw('font-alexUltraBold')}>{cin}</Text>
             <Text>رقم بطاقة التعريف الوطنية؛</Text>
           </View>
           <View style={tw('flex flex-row justify-between items-center mb-2')}>
             <Text>Adresse : </Text>
-            <Text style={tw('font-alexBold')}>{address}</Text>
+            <Text style={tw('font-alexUltraBold capitalize')}>
+              {address === 'unknow' ? '_ _ _ _ _ _ _ _' : address}
+            </Text>
             <Text>العنوان؛</Text>
           </View>
         </View>
