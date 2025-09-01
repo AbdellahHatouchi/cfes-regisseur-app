@@ -20,3 +20,27 @@ export const createVignetteValue = async (data: { valueDh: number; carnetSize: n
   }
 }
 
+export const updateVignetteValue = async (id: string, data: Partial<{ valueDh: number; carnetSize: number; description?: string }>) => {
+  try {
+    const vv = await VignetteValue.findByPk(id)
+    if (!vv) return { success: false, message: 'Valeur de vignette introuvable' }
+    await vv.update(data)
+    return { success: true, data: vv.toJSON() }
+  } catch (error) {
+    console.error('Error updating vignette value:', error)
+    return { success: false, message: 'Erreur lors de la mise à jour de la valeur de vignette' }
+  }
+}
+
+export const deleteVignetteValue = async (id: string) => {
+  try {
+    const vv = await VignetteValue.findByPk(id)
+    if (!vv) return { success: false, message: 'Valeur de vignette introuvable' }
+    await vv.destroy()
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting vignette value:', error)
+    return { success: false, message: 'Erreur lors de la suppression de la valeur de vignette' }
+  }
+}
+

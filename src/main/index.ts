@@ -45,7 +45,7 @@ import {
   getMonthlyReport,
   getYearlyReport
 } from './lib/reports/controller'
-import { createVignetteValue, listVignetteValues } from './lib/vignette-values/controller'
+import { createVignetteValue, listVignetteValues, updateVignetteValue, deleteVignetteValue } from './lib/vignette-values/controller'
 
 function createWindow(): void {
   // Create the browser window.
@@ -168,6 +168,8 @@ app.whenReady().then(async () => {
   // Vignette Values
   ipcMain.handle('listVignetteValues', () => listVignetteValues())
   ipcMain.handle('createVignetteValue', (_e, data) => createVignetteValue(data))
+  ipcMain.handle('updateVignetteValue', (_e, data) => updateVignetteValue(data.id, data))
+  ipcMain.handle('deleteVignetteValue', (_e, id) => deleteVignetteValue(id))
 
   createWindow()
 
