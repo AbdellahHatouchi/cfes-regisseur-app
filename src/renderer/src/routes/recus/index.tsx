@@ -1,0 +1,197 @@
+import { DataTable } from '@/components/table/data-table'
+import { Button } from '@/components/ui/button'
+import { Heading } from '@/components/ui/heading'
+import { Separator } from '@/components/ui/separator'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { createFileRoute } from '@tanstack/react-router'
+import { Plus, Receipt } from 'lucide-react'
+import { columns } from '@/pages/recus/columns'
+import { useEffect, useState } from 'react'
+import { RecuAttributes } from 'type'
+import { format } from 'date-fns'
+import { fr } from 'date-fns/locale'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
+export const Route = createFileRoute('/recus/')({
+  component: RecusPage
+})
+
+export function RecusPage() {
+  const [recus, setRecus] = useState<(RecuAttributes & { createdAt: string })[]>([])
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
+  const [totalRecu, setTotalRecu] = useState(0)
+  const [totalVerse, setTotalVerse] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const navigate = Route.useNavigate()
+
+  const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i)
+  const months = [
+    { value: null, label: 'Tous les mois' },
+    { value: 1, label: 'Janvier' },
+    { value: 2, label: 'Février' },
+    { value: 3, label: 'Mars' },
+    { value: 4, label: 'Avril' },
+    { value: 5, label: 'Mai' },
+    { value: 6, label: 'Juin' },
+    { value: 7, label: 'Juillet' },
+    { value: 8, label: 'Août' },
+    { value: 9, label: 'Septembre' },
+    { value: 10, label: 'Octobre' },
+    { value: 11, label: 'Novembre' },
+    { value: 12, label: 'Décembre' }
+  ]
+
+  const fetchData = async () => {
+    setLoading(true)
+    try {
+      // Fetch recus
+      const recusResponse = await window.electron.ipcRenderer.invoke('getRecus', {
+        year: selectedYear,
+        month: selectedMonth
+      })
+      
+      if (recusResponse.success) {
+        setRecus(recusResponse.data)
+      } else {
+        console.error('Error fetching recus:', recusResponse.message)
+      }
+
+      // Fetch totals
+      const recusTotalResponse = await window.electron.ipcRenderer.invoke('getRecusTotal', {
+        year: selectedYear,
+        month: selectedMonth
+      })
+      
+      if (recusTotalResponse.success) {
+        setTotalRecu(recusTotalResponse.data)
+      }
+
+      const versementsTotalResponse = await window.electron.ipcRenderer.invoke('getVersementsTotal', {
+        year: selectedYear,
+        month: selectedMonth
+      })
+      
+      if (versementsTotalResponse.success) {
+        setTotalVerse(versementsTotalResponse.data)
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [selectedYear, selectedMonth])
+
+  const formattedRecus = recus.map((recu) => ({
+    id: recu.id,
+    numeroRecu: recu.numeroRecu,
+    dateRecu: format(new Date(recu.dateRecu), 'dd MMMM yyyy', { locale: fr }),
+    montantTotal: recu.montantTotal,
+    description: recu.description || '',
+    createdAt: format(new Date(recu.createdAt!), 'dd MMMM yyyy', { locale: fr })
+  }))
+
+  const balance = totalRecu - totalVerse
+
+  return (
+    <>
+      <div className="flex items-center justify-between">
+        <Heading
+          title="Reçus & Versements des Vignettes"
+          description="Gérez les reçus et versements pour votre commune"
+        />
+        <Button
+          onClick={() =>
+            navigate({
+              to: '/recus/$recuId',
+              params: {
+                recuId: 'new'
+              }
+            })
+          }
+        >
+          <Plus className="mr-2 h-4 w-4" /> Nouveau Reçu
+        </Button>
+      </div>
+      <Separator />
+
+      {/* Filters */}
+      <div className="flex items-center space-x-4 mb-6">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-medium">Année:</span>
+          <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-medium">Mois:</span>
+          <Select value={selectedMonth?.toString() || ''} onValueChange={(value) => setSelectedMonth(value ? parseInt(value) : null)}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Tous les mois" />
+            </SelectTrigger>
+            <SelectContent>
+              {months.map((month) => (
+                <SelectItem key={month.value?.toString() || 'all'} value={month.value?.toString() || ' '}>
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Data Table */}
+      <DataTable
+        data={formattedRecus}
+        columns={columns}
+        loading={loading}
+      />
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Reçu</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalRecu.toFixed(2)} DH</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Versé</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalVerse.toFixed(2)} DH</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Solde</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {balance.toFixed(2)} DH
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </>
+  )
+}

@@ -25,6 +25,26 @@ import {
   getQuittancesTotalByUser,
   updateQuittanceStatus
 } from './lib/quittance/controller'
+import {
+  createRecu,
+  deleteRecu,
+  getRecuById,
+  getRecus,
+  updateRecu,
+  getRecusTotal
+} from './lib/recus/controller'
+import {
+  createVersement,
+  deleteVersement,
+  getVersementById,
+  getVersements,
+  updateVersement,
+  getVersementsTotal
+} from './lib/versements/controller'
+import {
+  getMonthlyReport,
+  getYearlyReport
+} from './lib/reports/controller'
 
 function createWindow(): void {
   // Create the browser window.
@@ -107,6 +127,26 @@ app.whenReady().then(async () => {
   ipcMain.handle('getQuittancesTotals', getQuittancesTotals)
   ipcMain.handle('getQuittancesTotalByUser', (_e, userId) => getQuittancesTotalByUser(userId))
   ipcMain.handle('updateQuittanceStatus', (_e, data) => updateQuittanceStatus(data.id, data.status))
+
+  // Recus
+  ipcMain.handle('createRecu', (_e, data) => createRecu(data))
+  ipcMain.handle('getRecus', (_e, filters) => getRecus(filters?.year, filters?.month))
+  ipcMain.handle('getRecuById', (_e, id) => getRecuById(id))
+  ipcMain.handle('updateRecu', (_e, data) => updateRecu(data.id, data))
+  ipcMain.handle('deleteRecu', (_e, id) => deleteRecu(id))
+  ipcMain.handle('getRecusTotal', (_e, filters) => getRecusTotal(filters?.year, filters?.month))
+
+  // Versements
+  ipcMain.handle('createVersement', (_e, data) => createVersement(data))
+  ipcMain.handle('getVersements', (_e, filters) => getVersements(filters?.year, filters?.month))
+  ipcMain.handle('getVersementById', (_e, id) => getVersementById(id))
+  ipcMain.handle('updateVersement', (_e, data) => updateVersement(data.id, data))
+  ipcMain.handle('deleteVersement', (_e, id) => deleteVersement(id))
+  ipcMain.handle('getVersementsTotal', (_e, filters) => getVersementsTotal(filters?.year, filters?.month))
+
+  // Reports
+  ipcMain.handle('getMonthlyReport', (_e, filters) => getMonthlyReport(filters.year, filters?.month))
+  ipcMain.handle('getYearlyReport', (_e, year) => getYearlyReport(year))
 
   createWindow()
 

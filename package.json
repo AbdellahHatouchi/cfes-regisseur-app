@@ -49,6 +49,7 @@
     "react-hook-form": "^7.54.2",
     "react-image": "^4.1.0",
     "react-pdf-tailwind": "^2.3.0",
+    "recharts": "^3.1.2",
     "sequelize": "^6.37.5",
     "sonner": "^1.7.1",
     "sqlite3": "^5.1.7",
