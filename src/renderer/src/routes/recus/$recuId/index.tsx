@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 import { RecuAttributes, VignetteValueAttributes } from 'type'
 import { useForm } from 'react-hook-form'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export const Route = createFileRoute('/recus/$recuId/')({
   component: RecuDetailPage
@@ -191,20 +192,23 @@ export function RecuDetailPage() {
                   {items.map((item, idx) => (
                     <div key={idx} className="grid grid-cols-12 gap-2 items-center">
                       <div className="col-span-7">
-                        <select
-                          className="w-full border rounded h-9 px-2"
+                        <Select
                           value={item.vignetteValueId}
-                          onChange={(e) => {
+                          onValueChange={(value) => {
                             const copy = [...items]
-                            copy[idx].vignetteValueId = e.target.value
+                            copy[idx].vignetteValueId = value
                             setItems(copy)
                           }}
                         >
-                          <option value="">Sélectionnez la valeur</option>
-                          {vignetteValues.map(v => (
-                            <option key={v.id} value={v.id}>{v.valueDh.toFixed(2)} DH - Carnet {v.carnetSize}</option>
-                          ))}
-                        </select>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionnez la valeur" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {vignetteValues.map(v => (
+                              <SelectItem key={v.id} value={v.id}>{v.valueDh.toFixed(2)} DH - Carnet {v.carnetSize}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="col-span-3">
                         <Input
