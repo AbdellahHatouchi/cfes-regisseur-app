@@ -4,6 +4,7 @@ import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createFileRoute } from '@tanstack/react-router'
 import { BarChart3, Download, FileText } from 'lucide-react'
+import { PDFDownloadLink, Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer'
 import { useEffect, useState } from 'react'
 import { MonthlyReportAttributes } from 'type'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -103,11 +104,39 @@ export function ReportsPage() {
     document.body.removeChild(link)
   }
 
-  const exportToPDF = () => {
-    // Simple PDF export using window.print() for now
-    // In a real app, you'd use a library like jsPDF or similar
-    window.print()
-  }
+  const styles = StyleSheet.create({
+    page: { padding: 24, fontSize: 10 },
+    title: { fontSize: 16, marginBottom: 12 },
+    row: { flexDirection: 'row', borderBottom: '1px solid #e5e7eb' },
+    cell: { padding: 6 },
+    th: { fontWeight: 'bold', backgroundColor: '#f3f4f6' },
+    colMonth: { width: '40%' },
+    colNum: { width: '20%', textAlign: 'right' },
+    footer: { marginTop: 16, fontSize: 12 }
+  })
+
+  const ReportDoc = (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.title}>Rapport {selectedYear}{selectedMonth ? ` - ${monthNames[selectedMonth - 1]}` : ''}</Text>
+        <View style={[styles.row, styles.th]}>
+          <Text style={[styles.cell, styles.colMonth]}>Mois</Text>
+          <Text style={[styles.cell, styles.colNum]}>Total Reçu (DH)</Text>
+          <Text style={[styles.cell, styles.colNum]}>Total Versé (DH)</Text>
+          <Text style={[styles.cell, styles.colNum]}>Solde (DH)</Text>
+        </View>
+        {monthlyData.map((item) => (
+          <View key={item.month} style={styles.row}>
+            <Text style={[styles.cell, styles.colMonth]}>{monthNames[item.month - 1]}</Text>
+            <Text style={[styles.cell, styles.colNum]}>{item.totalRecu.toFixed(2)}</Text>
+            <Text style={[styles.cell, styles.colNum]}>{item.totalVerse.toFixed(2)}</Text>
+            <Text style={[styles.cell, styles.colNum]}>{item.balance.toFixed(2)}</Text>
+          </View>
+        ))}
+        <Text style={styles.footer}>Total Reçu: {totalRecu.toFixed(2)} DH | Total Versé: {totalVerse.toFixed(2)} DH | Solde: {totalBalance.toFixed(2)} DH</Text>
+      </Page>
+    </Document>
+  )
 
   return (
     <>
@@ -156,10 +185,14 @@ export function ReportsPage() {
             <Download className="mr-2 h-4 w-4" />
             CSV
           </Button>
-          <Button onClick={exportToPDF} variant="outline" size="sm">
-            <FileText className="mr-2 h-4 w-4" />
-            PDF
-          </Button>
+          <PDFDownloadLink document={ReportDoc} fileName={`rapport_${selectedYear}${selectedMonth ? `_${monthNames[selectedMonth - 1]}` : ''}.pdf`}>
+            {({ loading }) => (
+              <Button variant="outline" size="sm">
+                <FileText className="mr-2 h-4 w-4" />
+                {loading ? 'Préparation...' : 'PDF'}
+              </Button>
+            )}
+          </PDFDownloadLink>
         </div>
       </div>
 

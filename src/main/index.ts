@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { sequelize, TestConnection } from './lib'
+import { sequelize, TestConnection, initializeAssociations } from './lib'
 import {
   createFiscalAttestation,
   deleteFiscalAttestation,
@@ -45,6 +45,7 @@ import {
   getMonthlyReport,
   getYearlyReport
 } from './lib/reports/controller'
+import { createVignetteValue, listVignetteValues } from './lib/vignette-values/controller'
 
 function createWindow(): void {
   // Create the browser window.
@@ -98,7 +99,23 @@ app.whenReady().then(async () => {
 
   try {
     await TestConnection()
+    await initializeAssociations()
     await sequelize.sync()
+    try {
+      await sequelize.query(`CREATE VIEW IF NOT EXISTS rapport_mensuel AS
+        SELECT
+          CAST(STRFTIME('%Y', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER) AS year,
+          CAST(STRFTIME('%m', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER) AS month,
+          IFNULL((SELECT SUM(montantTotal) FROM recu r2 WHERE CAST(STRFTIME('%Y', r2.dateRecu) AS INTEGER) = CAST(STRFTIME('%Y', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER) AND CAST(STRFTIME('%m', r2.dateRecu) AS INTEGER) = CAST(STRFTIME('%m', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER)), 0) AS total_recu,
+          IFNULL((SELECT SUM(montantTotal) FROM versement v2 WHERE CAST(STRFTIME('%Y', v2.dateVersement) AS INTEGER) = CAST(STRFTIME('%Y', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER) AND CAST(STRFTIME('%m', v2.dateVersement) AS INTEGER) = CAST(STRFTIME('%m', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER)), 0) AS total_verse,
+          (IFNULL((SELECT SUM(montantTotal) FROM recu r2 WHERE CAST(STRFTIME('%Y', r2.dateRecu) AS INTEGER) = CAST(STRFTIME('%Y', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER) AND CAST(STRFTIME('%m', r2.dateRecu) AS INTEGER) = CAST(STRFTIME('%m', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER)), 0) -
+           IFNULL((SELECT SUM(montantTotal) FROM versement v2 WHERE CAST(STRFTIME('%Y', v2.dateVersement) AS INTEGER) = CAST(STRFTIME('%Y', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER) AND CAST(STRFTIME('%m', v2.dateVersement) AS INTEGER) = CAST(STRFTIME('%m', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER)), 0)) AS balance
+        FROM recu r
+        FULL OUTER JOIN versement v ON CAST(STRFTIME('%Y-%m', r.dateRecu) AS TEXT) = CAST(STRFTIME('%Y-%m', v.dateVersement) AS TEXT);
+      `)
+    } catch (e) {
+      console.warn('rapport_mensuel view creation skipped or failed (SQLite may not support FULL OUTER JOIN). Falling back to controller aggregation.')
+    }
     console.log('Connection established successfully')
   } catch (error) {
     console.error('Failed to initialize database:', error)
@@ -147,6 +164,10 @@ app.whenReady().then(async () => {
   // Reports
   ipcMain.handle('getMonthlyReport', (_e, filters) => getMonthlyReport(filters.year, filters?.month))
   ipcMain.handle('getYearlyReport', (_e, year) => getYearlyReport(year))
+
+  // Vignette Values
+  ipcMain.handle('listVignetteValues', () => listVignetteValues())
+  ipcMain.handle('createVignetteValue', (_e, data) => createVignetteValue(data))
 
   createWindow()
 

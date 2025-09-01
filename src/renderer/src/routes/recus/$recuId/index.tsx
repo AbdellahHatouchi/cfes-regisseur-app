@@ -5,9 +5,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Save, Trash2 } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Plus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { RecuAttributes } from 'type'
+import { RecuAttributes, VignetteValueAttributes } from 'type'
 import { useForm } from 'react-hook-form'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -18,14 +18,17 @@ export const Route = createFileRoute('/recus/$recuId/')({
 interface RecuFormData {
   numeroRecu: string
   dateRecu: string
-  montantTotal: string
   description: string
 }
+
+type RecuItemForm = { id?: string; vignetteValueId: string; quantity: number; _delete?: boolean }
 
 export function RecuDetailPage() {
   const { recuId } = Route.useParams()
   const navigate = useNavigate()
   const [, setRecu] = useState<RecuAttributes | null>(null)
+  const [items, setItems] = useState<RecuItemForm[]>([])
+  const [vignetteValues, setVignetteValues] = useState<VignetteValueAttributes[]>([])
   const [loading, setLoading] = useState(false)
   const [isNew, setIsNew] = useState(false)
 
@@ -35,10 +38,17 @@ export function RecuDetailPage() {
     if (recuId === 'new') {
       setIsNew(true)
       setValue('dateRecu', new Date().toISOString().split('T')[0])
+      loadVignetteValues()
     } else {
       fetchRecu()
+      loadVignetteValues()
     }
   }, [recuId])
+
+  const loadVignetteValues = async () => {
+    const res = await window.electron.ipcRenderer.invoke('listVignetteValues')
+    if (res.success) setVignetteValues(res.data)
+  }
 
   const fetchRecu = async () => {
     try {
@@ -47,8 +57,10 @@ export function RecuDetailPage() {
         setRecu(response.data)
         setValue('numeroRecu', response.data.numeroRecu)
         setValue('dateRecu', new Date(response.data.dateRecu).toISOString().split('T')[0])
-        setValue('montantTotal', response.data.montantTotal.toString())
         setValue('description', response.data.description || '')
+        setItems(
+          (response.data.items || []).map((it: any) => ({ id: it.id, vignetteValueId: it.vignetteValueId, quantity: it.quantity }))
+        )
       } else {
         alert(response.message)
         navigate({ to: '/recus' })
@@ -62,11 +74,11 @@ export function RecuDetailPage() {
   const onSubmit = async (data: RecuFormData) => {
     setLoading(true)
     try {
-      const recuData = {
+      const recuData: any = {
         numeroRecu: data.numeroRecu,
         dateRecu: new Date(data.dateRecu),
-        montantTotal: parseFloat(data.montantTotal),
-        description: data.description
+        description: data.description,
+        items: items.filter(i => !i._delete).map(({ id, ...rest }) => rest)
       }
 
       if (isNew) {
@@ -78,10 +90,7 @@ export function RecuDetailPage() {
           alert(response.message)
         }
       } else {
-        const response = await window.electron.ipcRenderer.invoke('updateRecu', {
-          id: recuId,
-          ...recuData
-        })
+        const response = await window.electron.ipcRenderer.invoke('updateRecu', { id: recuId, ...recuData, items })
         if (response.success) {
           alert('Reçu mis à jour avec succès')
           navigate({ to: '/recus' })
@@ -177,21 +186,54 @@ export function RecuDetailPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="montantTotal">Montant Total (DH) *</Label>
-                <Input
-                  id="montantTotal"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  {...register('montantTotal', { 
-                    required: 'Le montant total est requis',
-                    min: { value: 0, message: 'Le montant doit être positif' }
-                  })}
-                  placeholder="0.00"
-                />
-                {errors.montantTotal && (
-                  <p className="text-sm text-red-500">{errors.montantTotal.message}</p>
-                )}
+                <Label>Articles</Label>
+                <div className="space-y-2">
+                  {items.map((item, idx) => (
+                    <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-7">
+                        <select
+                          className="w-full border rounded h-9 px-2"
+                          value={item.vignetteValueId}
+                          onChange={(e) => {
+                            const copy = [...items]
+                            copy[idx].vignetteValueId = e.target.value
+                            setItems(copy)
+                          }}
+                        >
+                          <option value="">Sélectionnez la valeur</option>
+                          {vignetteValues.map(v => (
+                            <option key={v.id} value={v.id}>{v.valueDh.toFixed(2)} DH - Carnet {v.carnetSize}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="col-span-3">
+                        <Input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => {
+                            const copy = [...items]
+                            copy[idx].quantity = parseInt(e.target.value || '0')
+                            setItems(copy)
+                          }}
+                        />
+                      </div>
+                      <div className="col-span-2 flex justify-end">
+                        <Button type="button" variant="ghost" onClick={() => {
+                          const copy = [...items]
+                          if (copy[idx].id) copy[idx]._delete = true
+                          else copy.splice(idx, 1)
+                          setItems(copy)
+                        }}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" onClick={() => setItems([...items, { vignetteValueId: '', quantity: 1 }])}>
+                    <Plus className="h-4 w-4 mr-2" /> Ajouter un article
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-2">

@@ -58,6 +58,40 @@ export interface VersementAttributes {
   updatedAt?: Date
 }
 
+// New schema types
+export interface VignetteValueAttributes {
+  id: string
+  valueDh: number
+  carnetSize: number
+  description?: string
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface RecuItemAttributes {
+  id: string
+  recuId: string
+  vignetteValueId: string
+  quantity: number
+  subtotalDh: number
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export type VersementItemType = 'vignette' | 'quittance'
+
+export interface VersementItemAttributes {
+  id: string
+  versementId: string
+  type: VersementItemType
+  vignetteValueId?: string | null
+  quantity?: number | null
+  quittanceNum?: string | null
+  amountDh: number
+  createdAt?: Date
+  updatedAt?: Date
+}
+
 // Define the attributes for the monthly report
 export interface MonthlyReportAttributes {
   month: number

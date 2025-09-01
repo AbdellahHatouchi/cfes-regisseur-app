@@ -31,7 +31,7 @@ Recu.init(
       unique: true
     },
     dateRecu: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
       allowNull: false
     },
     montantTotal: {
@@ -46,6 +46,7 @@ Recu.init(
   {
     sequelize,
     modelName: 'Recu',
+    tableName: 'recu',
     indexes: [{ unique: true, fields: ['numeroRecu'] }]
   }
 )

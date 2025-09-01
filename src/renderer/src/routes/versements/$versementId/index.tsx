@@ -6,9 +6,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Save, Trash2 } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Plus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { VersementAttributes } from 'type'
+import { VersementAttributes, VignetteValueAttributes } from 'type'
 import { useForm } from 'react-hook-form'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -20,15 +20,18 @@ interface VersementFormData {
   numeroVersement: string
   dateVersement: string
   type: 'Vignette' | 'Quittance' | 'Mixte'
-  montantTotal: string
   numeroQuittance: string
   description: string
 }
+
+type VersementItemForm = { id?: string; type: 'vignette' | 'quittance'; vignetteValueId?: string; quantity?: number; quittanceNum?: string; amountDh?: number; _delete?: boolean }
 
 export function VersementDetailPage() {
   const { versementId } = Route.useParams()
   const navigate = useNavigate()
   const [, setVersement] = useState<VersementAttributes | null>(null)
+  const [items, setItems] = useState<VersementItemForm[]>([])
+  const [vignetteValues, setVignetteValues] = useState<VignetteValueAttributes[]>([])
   const [loading, setLoading] = useState(false)
   const [isNew, setIsNew] = useState(false)
 
@@ -40,10 +43,17 @@ export function VersementDetailPage() {
       setIsNew(true)
       setValue('dateVersement', new Date().toISOString().split('T')[0])
       setValue('type', 'Vignette')
+      loadVignetteValues()
     } else {
       fetchVersement()
+      loadVignetteValues()
     }
   }, [versementId])
+
+  const loadVignetteValues = async () => {
+    const res = await window.electron.ipcRenderer.invoke('listVignetteValues')
+    if (res.success) setVignetteValues(res.data)
+  }
 
   const fetchVersement = async () => {
     try {
@@ -53,9 +63,9 @@ export function VersementDetailPage() {
         setValue('numeroVersement', response.data.numeroVersement)
         setValue('dateVersement', new Date(response.data.dateVersement).toISOString().split('T')[0])
         setValue('type', response.data.type)
-        setValue('montantTotal', response.data.montantTotal.toString())
         setValue('numeroQuittance', response.data.numeroQuittance || '')
         setValue('description', response.data.description || '')
+        setItems((response.data.items || []).map((it: any) => ({ id: it.id, type: it.type, vignetteValueId: it.vignetteValueId || undefined, quantity: it.quantity || undefined, quittanceNum: it.quittanceNum || undefined, amountDh: it.amountDh })))
       } else {
         alert(response.message)
         navigate({ to: '/versements' })
@@ -69,13 +79,13 @@ export function VersementDetailPage() {
   const onSubmit = async (data: VersementFormData) => {
     setLoading(true)
     try {
-      const versementData = {
+      const versementData: any = {
         numeroVersement: data.numeroVersement,
         dateVersement: new Date(data.dateVersement),
         type: data.type,
-        montantTotal: parseFloat(data.montantTotal),
         numeroQuittance: data.numeroQuittance || undefined,
-        description: data.description
+        description: data.description,
+        items: items.filter(i => !i._delete).map(({ id, ...rest }) => rest)
       }
 
       if (isNew) {
@@ -87,10 +97,7 @@ export function VersementDetailPage() {
           alert(response.message)
         }
       } else {
-        const response = await window.electron.ipcRenderer.invoke('updateVersement', {
-          id: versementId,
-          ...versementData
-        })
+        const response = await window.electron.ipcRenderer.invoke('updateVersement', { id: versementId, ...versementData, items })
         if (response.success) {
           alert('Versement mis à jour avec succès')
           navigate({ to: '/versements' })
@@ -185,52 +192,129 @@ export function VersementDetailPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="type">Type *</Label>
-                  <Select value={selectedType} onValueChange={(value) => setValue('type', value as any)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionnez le type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Vignette">Vignette</SelectItem>
-                      <SelectItem value="Quittance">Quittance</SelectItem>
-                      <SelectItem value="Mixte">Mixte</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.type && (
-                    <p className="text-sm text-red-500">{errors.type.message}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="montantTotal">Montant Total (DH) *</Label>
-                  <Input
-                    id="montantTotal"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    {...register('montantTotal', { 
-                      required: 'Le montant total est requis',
-                      min: { value: 0, message: 'Le montant doit être positif' }
-                    })}
-                    placeholder="0.00"
-                  />
-                  {errors.montantTotal && (
-                    <p className="text-sm text-red-500">{errors.montantTotal.message}</p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="type">Type *</Label>
+                <Select value={selectedType} onValueChange={(value) => setValue('type', value as any)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez le type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Vignette">Vignette</SelectItem>
+                    <SelectItem value="Quittance">Quittance</SelectItem>
+                    <SelectItem value="Mixte">Mixte</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.type && (
+                  <p className="text-sm text-red-500">{errors.type.message}</p>
+                )}
               </div>
 
-              {(selectedType === 'Quittance' || selectedType === 'Mixte') && (
+              <div className="space-y-2">
+                <Label>Articles</Label>
                 <div className="space-y-2">
-                  <Label htmlFor="numeroQuittance">Numéro de Quittance</Label>
-                  <Input
-                    id="numeroQuittance"
-                    {...register('numeroQuittance')}
-                    placeholder="Ex: QUIT-2024-001"
-                  />
+                  {items.map((item, idx) => (
+                    <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-3">
+                        <select
+                          className="w-full border rounded h-9 px-2"
+                          value={item.type}
+                          onChange={(e) => {
+                            const copy = [...items]
+                            copy[idx].type = e.target.value as any
+                            if (copy[idx].type === 'vignette') {
+                              copy[idx].quittanceNum = undefined
+                              copy[idx].amountDh = undefined
+                              copy[idx].vignetteValueId = ''
+                              copy[idx].quantity = 1
+                            } else {
+                              copy[idx].vignetteValueId = undefined
+                              copy[idx].quantity = undefined
+                              copy[idx].quittanceNum = ''
+                              copy[idx].amountDh = 0
+                            }
+                            setItems(copy)
+                          }}
+                        >
+                          <option value="vignette">Vignette</option>
+                          <option value="quittance">Quittance</option>
+                        </select>
+                      </div>
+                      {item.type === 'vignette' ? (
+                        <>
+                          <div className="col-span-5">
+                            <select
+                              className="w-full border rounded h-9 px-2"
+                              value={item.vignetteValueId || ''}
+                              onChange={(e) => {
+                                const copy = [...items]
+                                copy[idx].vignetteValueId = e.target.value
+                                setItems(copy)
+                              }}
+                            >
+                              <option value="">Sélectionnez la valeur</option>
+                              {vignetteValues.map(v => (
+                                <option key={v.id} value={v.id}>{v.valueDh.toFixed(2)} DH - Carnet {v.carnetSize}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="col-span-2">
+                            <Input
+                              type="number"
+                              min="1"
+                              value={item.quantity || 1}
+                              onChange={(e) => {
+                                const copy = [...items]
+                                copy[idx].quantity = parseInt(e.target.value || '0')
+                                setItems(copy)
+                              }}
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="col-span-5">
+                            <Input
+                              placeholder="N° quittance"
+                              value={item.quittanceNum || ''}
+                              onChange={(e) => {
+                                const copy = [...items]
+                                copy[idx].quittanceNum = e.target.value
+                                setItems(copy)
+                              }}
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={item.amountDh || 0}
+                              onChange={(e) => {
+                                const copy = [...items]
+                                copy[idx].amountDh = parseFloat(e.target.value || '0')
+                                setItems(copy)
+                              }}
+                            />
+                          </div>
+                        </>
+                      )}
+                      <div className="col-span-2 flex justify-end">
+                        <Button type="button" variant="ghost" onClick={() => {
+                          const copy = [...items]
+                          if (copy[idx].id) copy[idx]._delete = true
+                          else copy.splice(idx, 1)
+                          setItems(copy)
+                        }}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" onClick={() => setItems([...items, { type: 'vignette', vignetteValueId: '', quantity: 1 }])}>
+                    <Plus className="h-4 w-4 mr-2" /> Ajouter un article
+                  </Button>
                 </div>
-              )}
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>

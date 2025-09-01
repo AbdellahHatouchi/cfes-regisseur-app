@@ -33,7 +33,7 @@ Versement.init(
       unique: true
     },
     dateVersement: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
       allowNull: false
     },
     type: {
@@ -56,6 +56,7 @@ Versement.init(
   {
     sequelize,
     modelName: 'Versement',
+    tableName: 'versement',
     indexes: [{ unique: true, fields: ['numeroVersement'] }]
   }
 )
