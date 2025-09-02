@@ -39,7 +39,8 @@ import {
   getVersementById,
   getVersements,
   updateVersement,
-  getVersementsTotal
+  getVersementsTotal,
+  getNextVersementNumber
 } from './lib/versements/controller'
 import {
   getMonthlyReport,

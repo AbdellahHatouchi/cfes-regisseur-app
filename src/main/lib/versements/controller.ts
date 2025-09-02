@@ -5,11 +5,39 @@ import VignetteValue from '../vignette-values/model'
 import { VersementAttributes } from '../../../../type'
 import { sequelize } from '..'
 
+export const getNextVersementNumber = async (): Promise<string> => {
+  try {
+    const year = new Date().getFullYear()
+    // Expect format VER-YYYY-XXX
+    const last = await Versement.findOne({
+      where: {
+        dateVersement: {
+          [Op.between]: [new Date(year, 0, 1), new Date(year, 11, 31, 23, 59, 59, 999)]
+        }
+      },
+      order: [['createdAt', 'DESC']]
+    })
+    let nextSeq = 1
+    if (last?.numeroVersement) {
+      const match = String(last.numeroVersement).match(/(\d{4})[-_](\d+)/)
+      if (match && Number(match[1]) === year) {
+        nextSeq = Number(match[2]) + 1
+      }
+    }
+    const next = `VER-${year}-${String(nextSeq).padStart(3, '0')}`
+    return next
+  } catch (error) {
+    console.error('Error generating next versement number:', error)
+    throw new Error('Erreur lors de la génération du numéro de versement')
+  }
+}
+
 export const createVersement = async (
   data: Omit<VersementAttributes, 'id'> & { items?: Array<{ type: 'vignette' | 'quittance'; vignetteValueId?: string; quantity?: number; quittanceNum?: string; amountDh?: number }> }
 ): Promise<{ success: boolean; data?: any; message?: string }> => {
   const t = await sequelize.transaction()
   try {
+    const nextVersNumber = await getNextVersementNumber()
     const hasItems = !!(data.items && data.items.length)
     const versement = await Versement.create({ ...data, montantTotal: hasItems ? 0 : data.montantTotal }, { transaction: t })
     let total = 0
