@@ -13,7 +13,23 @@ import { useForm } from 'react-hook-form'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export const Route = createFileRoute('/versements/$versementId/')({
-  component: VersementDetailPage
+  component: VersementDetailPage,
+  loader: async ({ params }) => {
+    const { versementId } = params
+    if (versementId === 'new') {
+      return { versement: null }
+    }
+
+    try {
+      const response = await window.electron.ipcRenderer.invoke('getVersementById', versementId)
+      if (response.success) {
+        return { versement: response.data }
+      }
+      throw new Error(response.message || 'Erreur lors du chargement du versement')
+    } catch (error: any) {
+      throw new Error(error?.message || 'Erreur lors du chargement du versement')
+    }
+  }
 })
 
 interface VersementFormData {
@@ -29,51 +45,64 @@ type VersementItemForm = { id?: string; type: 'vignette' | 'quittance'; vignette
 export function VersementDetailPage() {
   const { versementId } = Route.useParams()
   const navigate = useNavigate()
-  const [, setVersement] = useState<VersementAttributes | null>(null)
-  const [items, setItems] = useState<VersementItemForm[]>([])
+  const { versement } = Route.useLoaderData() as { versement: VersementAttributes | null }
+  const [items, setItems] = useState<VersementItemForm[]>(() =>
+    (versement?.items || []).map((it: any) => ({
+      id: it.id,
+      type: it.type,
+      vignetteValueId: it.vignetteValueId || undefined,
+      quantity: it.quantity || undefined,
+      quittanceNum: it.quittanceNum || undefined,
+      amountDh: it.amountDh
+    }))
+  )
   const [vignetteValues, setVignetteValues] = useState<VignetteValueAttributes[]>([])
   const [loading, setLoading] = useState(false)
-  const [isNew, setIsNew] = useState(false)
+  const isNew = !versement
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<VersementFormData>()
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<VersementFormData>({
+    defaultValues: {
+      numeroVersement: versement?.numeroVersement || '',
+      dateVersement: (versement?.dateVersement
+        ? new Date(versement.dateVersement)
+        : new Date()).toISOString().split('T')[0],
+      type: (versement?.type as any) || 'Vignette',
+      numeroQuittance: versement?.numeroQuittance || '',
+      description: versement?.description || ''
+    }
+  })
   const selectedType = watch('type')
 
   useEffect(() => {
-    if (versementId === 'new') {
-      setIsNew(true)
-      setValue('dateVersement', new Date().toISOString().split('T')[0])
-      setValue('type', 'Vignette')
-      loadVignetteValues()
-    } else {
-      fetchVersement()
-      loadVignetteValues()
-    }
-  }, [versementId])
+    loadVignetteValues()
+  }, [])
+
+  useEffect(() => {
+    reset({
+      numeroVersement: versement?.numeroVersement || '',
+      dateVersement: (versement?.dateVersement
+        ? new Date(versement.dateVersement)
+        : new Date()).toISOString().split('T')[0],
+      type: (versement?.type as any) || 'Vignette',
+      numeroQuittance: versement?.numeroQuittance || '',
+      description: versement?.description || ''
+    })
+
+    setItems(
+      (versement?.items || []).map((it: any) => ({
+        id: it.id,
+        type: it.type,
+        vignetteValueId: it.vignetteValueId || undefined,
+        quantity: it.quantity || undefined,
+        quittanceNum: it.quittanceNum || undefined,
+        amountDh: it.amountDh
+      }))
+    )
+  }, [versement, reset])
 
   const loadVignetteValues = async () => {
     const res = await window.electron.ipcRenderer.invoke('listVignetteValues')
     if (res.success) setVignetteValues(res.data)
-  }
-
-  const fetchVersement = async () => {
-    try {
-      const response = await window.electron.ipcRenderer.invoke('getVersementById', versementId)
-      if (response.success) {
-        setVersement(response.data)
-        setValue('numeroVersement', response.data.numeroVersement)
-        setValue('dateVersement', new Date(response.data.dateVersement).toISOString().split('T')[0])
-        setValue('type', response.data.type)
-        setValue('numeroQuittance', response.data.numeroQuittance || '')
-        setValue('description', response.data.description || '')
-        setItems((response.data.items || []).map((it: any) => ({ id: it.id, type: it.type, vignetteValueId: it.vignetteValueId || undefined, quantity: it.quantity || undefined, quittanceNum: it.quittanceNum || undefined, amountDh: it.amountDh })))
-      } else {
-        alert(response.message)
-        navigate({ to: '/versements' })
-      }
-    } catch (error) {
-      console.error('Error fetching versement:', error)
-      alert('Erreur lors de la récupération du versement')
-    }
   }
 
   const onSubmit = async (data: VersementFormData) => {
