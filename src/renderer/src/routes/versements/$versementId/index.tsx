@@ -12,9 +12,9 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Save, Trash2, Plus, X, ReceiptText } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Plus, ReceiptText } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { VersementAttributes, VignetteValueAttributes } from 'type'
+import { VersementRes, VignetteValueAttributes } from 'type'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -28,88 +28,55 @@ import {
 } from '@/components/ui/form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { formSchema, VersementForm } from '@shared/schema/versement-schema'
+import { formatDh } from '@/lib/utils'
 
-export const Route = createFileRoute('/versements/$versementId/')({
-  component: VersementDetailPage
-})
-
-// // Vignette schema
-// const vignetteSchema = z.object({
-//   type: z.literal('vignette'),
-//   vignetteValue: z.string().min(1, 'Valeur de vignette est requis!'),
-//   vignetteQuantity: z.coerce.number().min(1)
-// })
-
-// // Quittance schema
-// const quittanceSchema = z.object({
-//   type: z.literal('quittance'),
-//   quittanceNum: z.string().min(1, 'Numero quittance est requis!'),
-//   quittanceAmount: z.coerce.number().min(1)
-// })
-// // Union based on "type"
-// const itemsSchema = z.discriminatedUnion('type', [vignetteSchema, quittanceSchema])
-
-// const formSchema = z
-//   .object({
-//     numeroVersement: z.string().default('VER-NN-YYY'),
-//     dateVersement: z.coerce.date().transform((d) => d.toDateString()),
-//     type: z.enum(['Mixte', 'Quittance', 'Vignette']).default('Mixte'),
-//     note: z.string().default(''),
-//     items: itemsSchema.array().min(1, 'Au moins one article est requis!')
-//   })
-//   .superRefine((data, ctx) => {
-//     data.items.forEach((item, index) => {
-//       if (data.type === 'Vignette' && item.type !== 'vignette') {
-//         ctx.addIssue({
-//           path: ['items', index, 'type'],
-//           message: `Item #${index + 1} doit être une vignette`,
-//           code: z.ZodIssueCode.custom
-//         })
-//       }
-//       if (data.type === 'Quittance' && item.type !== 'quittance') {
-//         ctx.addIssue({
-//           path: ['items', index, 'type'],
-//           message: `Item #${index + 1} doit être une quittance`,
-//           code: z.ZodIssueCode.custom
-//         })
-//       }
-//     })
-
-//     if (data.type === 'Mixte') {
-//       const hasVignette = data.items.some((item) => item.type === 'vignette')
-//       const hasQuittance = data.items.some((item) => item.type === 'quittance')
-//       if (!hasVignette || !hasQuittance) {
-//         ctx.addIssue({
-//           path: ['items'],
-//           message: 'Pour un versement mixte, il faut au moins une vignette et une quittance',
-//           code: z.ZodIssueCode.custom
-//         })
-//       }
-//     }
-//   })
-// type VersementForm = z.infer<typeof formSchema>
-
-type VersementItemForm = {
-  id?: string
-  type: 'vignette' | 'quittance'
-  vignetteValueId?: string
-  quantity?: number
-  quittanceNum?: string
-  amountDh?: number
-  _delete?: boolean
+const fetchVersement = async (versementId: string) => {
+  try {
+    if (versementId === 'new') {
+      return null
+    }
+    const response = await window.electron.ipcRenderer.invoke('getVersementById', versementId)
+    if (response.success) {
+      return response.data
+    }
+    throw new Error(response.message || 'Erreur lors du chargement du versement')
+  } catch (error: any) {
+    console.error('Error fetching versement:', error)
+    throw new Error(error?.message || 'Erreur lors du chargement du versement')
+  }
+}
+const loadVignetteValues = async () => {
+  try {
+    const res = await window.electron.ipcRenderer.invoke('listVignetteValues')
+    if (res.success) return res.data
+    throw new Error(res.message || 'Erreur lors du chargement du des valeur de vignettes')
+  } catch (error: any) {
+    throw new Error(error?.message || 'Erreur lors du chargement du des valeur de vignettes')
+  }
 }
 
-const formatDh = (n: number) =>
-  Number(n || 0).toLocaleString('fr-MA', { style: 'currency', currency: 'MAD' })
+export const Route = createFileRoute('/versements/$versementId/')({
+  component: VersementDetailPage,
+  loader: async ({ params }) => {
+    const { versementId } = params
+    const versement = await fetchVersement(versementId)
+    const vignetteValues = await loadVignetteValues()
+    return {
+      versement,
+      vignetteValues
+    }
+  }
+})
 
 export function VersementDetailPage() {
   const { versementId } = Route.useParams()
   const navigate = useNavigate()
-  const [, setVersement] = useState<VersementAttributes | null>(null)
-  const [items, setItems] = useState<VersementItemForm[]>([])
-  const [vignetteValues, setVignetteValues] = useState<VignetteValueAttributes[]>([])
+  const { versement, vignetteValues } = Route.useLoaderData() as {
+    versement: VersementRes | null
+    vignetteValues: VignetteValueAttributes[]
+  }
   const [loading, setLoading] = useState(false)
-  const [isNew, setIsNew] = useState(false)
+  const isNew = versementId === 'new'
 
   const form = useForm<VersementForm>({
     resolver: zodResolver(formSchema),
@@ -132,13 +99,13 @@ export function VersementDetailPage() {
 
     const lines = watchedItems.map((item: any) => {
       if (item.type === 'vignette') {
-        const vv = vignetteValues.find((v) => v.id === item.vignetteValue)
+        const vv = vignetteValues.find((v) => v.id === item.vignetteValueId)
         const quantity = Number(item.vignetteQuantity) || 0
         const unitDh = vv?.valueDh ?? 0
         const lineAmount = unitDh * quantity
         totalVignettes += lineAmount
         return {
-          key: `v_${item.vignetteValue}_${quantity}`,
+          key: `v_${item.vignetteValueId}_${quantity}`,
           label: vv ? `${unitDh.toFixed(2)} DH x ${quantity} Vignette(s)` : 'Vignette',
           amount: lineAmount
         }
@@ -162,71 +129,29 @@ export function VersementDetailPage() {
   }, [watchedItems, vignetteValues])
 
   useEffect(() => {
-    if (versementId === 'new') {
-      setIsNew(true)
-      form.setValue('dateVersement', new Date().toISOString().split('T')[0])
-      form.setValue('type', 'Vignette')
-      loadVignetteValues()
-    } else {
-      fetchVersement()
-      loadVignetteValues()
+    if (versement) {
+      form.reset({
+        numeroVersement: versement.numeroVersement,
+        dateVersement: new Date(versement.dateVersement).toDateString(),
+        items: versement.items.map((i) => ({
+          id: i.id,
+          vignetteValueId: i.vignetteValueId || '',
+          vignetteQuantity: i.vignetteQuantity || 0,
+          quittanceNum: i.quittanceNum || '',
+          itemAmount: i.itemAmount,
+          type: i.type
+        })),
+        type: versement.type,
+        note: versement.note || ''
+      })
     }
-  }, [versementId])
-
-  const loadVignetteValues = async () => {
-    const res = await window.electron.ipcRenderer.invoke('listVignetteValues')
-    if (res.success) setVignetteValues(res.data)
-  }
-
-  const fetchVersement = async () => {
-    try {
-      const response = await window.electron.ipcRenderer.invoke('getVersementById', versementId)
-      if (response.success) {
-        setVersement(response.data)
-        form.setValue('numeroVersement', response.data.numeroVersement)
-        form.setValue(
-          'dateVersement',
-          new Date(response.data.dateVersement).toISOString().split('T')[0]
-        )
-        form.setValue('type', response.data.type)
-        // form.setValue('numeroQuittance', response.data.numeroQuittance || '')
-        form.setValue('note', response.data.description || '')
-        setItems(
-          (response.data.items || []).map((it: any) => ({
-            id: it.id,
-            type: it.type,
-            vignetteValueId: it.vignetteValueId || undefined,
-            quantity: it.quantity || undefined,
-            quittanceNum: it.quittanceNum || undefined,
-            amountDh: it.amountDh
-          }))
-        )
-      } else {
-        alert(response.message)
-        navigate({ to: '/versements' })
-      }
-    } catch (error) {
-      console.error('Error fetching versement:', error)
-      alert('Erreur lors de la récupération du versement')
-    }
-  }
+  }, [])
 
   const onSubmit = async (data: VersementForm) => {
     setLoading(true)
-    console.log(data)
-
     try {
-      const versementData: any = {
-        numeroVersement: data.numeroVersement,
-        dateVersement: new Date(data.dateVersement),
-        type: data.type,
-        // numeroQuittance: data.numeroQuittance || undefined,
-        description: data.note,
-        items: items.filter((i) => !i._delete).map(({ id, ...rest }) => rest)
-      }
-
       if (isNew) {
-        const response = await window.electron.ipcRenderer.invoke('createVersement', versementData)
+        const response = await window.electron.ipcRenderer.invoke('createVersement', data)
         if (response.success) {
           alert('Versement créé avec succès')
           navigate({ to: '/versements' })
@@ -236,8 +161,7 @@ export function VersementDetailPage() {
       } else {
         const response = await window.electron.ipcRenderer.invoke('updateVersement', {
           id: versementId,
-          ...versementData,
-          items
+          ...data
         })
         if (response.success) {
           alert('Versement mis à jour avec succès')
@@ -400,7 +324,7 @@ export function VersementDetailPage() {
                           <>
                             <FormField
                               control={form.control}
-                              name={`items.${index}.vignetteValue`}
+                              name={`items.${index}.vignetteValueId`}
                               render={({ field }) => (
                                 <FormItem className="col-span-5">
                                   <FormLabel>Valeur</FormLabel>
@@ -492,10 +416,10 @@ export function VersementDetailPage() {
                       type="button"
                       variant="outline"
                       onClick={() =>
-                        append([{ type: 'vignette', vignetteValue: '', vignetteQuantity: 1 }])
+                        append([{ type: 'vignette', vignetteValueId: '', vignetteQuantity: 1 }])
                       }
                     >
-                      <Plus className="h-4 w-4 mr-2" /> Ajouter un article
+                      <Plus className="h-4 w-4 mr-2" /> Ajouter un verement
                     </Button>
                   </div>
                 </div>
@@ -546,7 +470,7 @@ export function VersementDetailPage() {
             <div className="divide-y rounded-md border">
               {totals.lines.length === 0 ? (
                 <div className="p-3 text-sm text-muted-foreground flex flex-col items-center justify-center gap-2 min-h-96">
-                  <ReceiptText className='size-20'/>
+                  <ReceiptText className="size-20" />
                   <span>Aucun Verement</span>
                 </div>
               ) : (

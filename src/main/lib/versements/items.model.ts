@@ -1,31 +1,18 @@
 import { DataTypes, Model, Optional } from 'sequelize'
 import { sequelize } from '..'
-import VignetteValue from '../vignette-values/model'
+import { VersementItemAttributes, VersementItemType } from 'type'
 
-export type VersementItemType = 'vignette' | 'quittance'
 
-export interface VersementItemAttributes {
-  id: string
-  versementId: string
-  type: VersementItemType
-  vignetteValueId?: string | null
-  quantity?: number | null
-  quittanceNum?: string | null
-  amountDh: number
-  createdAt?: Date
-  updatedAt?: Date
-}
-
-type VersementItemCreationAttributes = Optional<VersementItemAttributes, 'id' | 'vignetteValueId' | 'quantity' | 'quittanceNum'>
+type VersementItemCreationAttributes = Optional<VersementItemAttributes, 'id' | 'vignetteValueId' | 'vignetteQuantity' | 'quittanceNum'>
 
 class VersementItem extends Model<VersementItemAttributes, VersementItemCreationAttributes> implements VersementItemAttributes {
   public id!: string
   public versementId!: string
   public type!: VersementItemType
   public vignetteValueId?: string | null
-  public quantity?: number | null
+  public vignetteQuantity?: number | null
   public quittanceNum?: string | null
-  public amountDh!: number
+  public itemAmount!: number
   public readonly createdAt!: Date
   public readonly updatedAt!: Date
 }
@@ -51,7 +38,7 @@ VersementItem.init(
       allowNull: true,
       field: 'vignette_value_id'
     },
-    quantity: {
+    vignetteQuantity: {
       type: DataTypes.INTEGER,
       allowNull: true
     },
@@ -60,10 +47,10 @@ VersementItem.init(
       allowNull: true,
       field: 'quittance_num'
     },
-    amountDh: {
+    itemAmount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
-      field: 'amount_dh'
+      field: 'item_amount'
     }
   },
   {
@@ -73,24 +60,24 @@ VersementItem.init(
   }
 )
 
-// Validation and auto calc hook
-VersementItem.addHook('beforeValidate', async (item: VersementItem) => {
-  if (item.type === 'vignette') {
-    if (!item.vignetteValueId || !item.quantity) {
-      throw new Error('vignette type requires vignetteValueId and quantity')
-    }
-    const vv = await VignetteValue.findByPk(item.vignetteValueId)
-    if (!vv) throw new Error('Invalid vignette value')
-    const amount = Number(vv.get('valueDh')) * item.quantity
-    item.amountDh = Number(amount.toFixed(2)) as any
-  } else if (item.type === 'quittance') {
-    if (!item.quittanceNum || item.amountDh == null) {
-      throw new Error('quittance type requires quittanceNum and amountDh')
-    }
-    item.vignetteValueId = null
-    item.quantity = null
-  }
-})
+// // Validation and auto calc hook
+// VersementItem.addHook('beforeValidate', async (item: VersementItem) => {
+//   if (item.type === 'vignette') {
+//     if (!item.vignetteValueId || !item.vignetteQuantity) {
+//       throw new Error('vignette type requires vignetteValueId and quantity')
+//     }
+//     const vv = await VignetteValue.findByPk(item.vignetteValueId)
+//     if (!vv) throw new Error('Invalid vignette value')
+//     const amount = Number(vv.get('valueDh')) * item.vignetteQuantity
+//     item.itemAmount = Number(amount.toFixed(2)) as any
+//   } else if (item.type === 'quittance') {
+//     if (!item.quittanceNum || item.itemAmount == null) {
+//       throw new Error('quittance type requires quittanceNum and amount en DH')
+//     }
+//     item.vignetteValueId = null
+//     item.itemAmount = item.quittanceAmount
+//   }
+// })
 
 export default VersementItem
 

@@ -53,7 +53,7 @@ export interface VersementAttributes {
   type: 'Vignette' | 'Quittance' | 'Mixte'
   montantTotal: number
   numeroQuittance?: string
-  description?: string
+  note?: string
   createdAt?: Date
   updatedAt?: Date
 }
@@ -85,9 +85,9 @@ export interface VersementItemAttributes {
   versementId: string
   type: VersementItemType
   vignetteValueId?: string | null
-  quantity?: number | null
+  vignetteQuantity?: number | null
   quittanceNum?: string | null
-  amountDh: number
+  itemAmount: number
   createdAt?: Date
   updatedAt?: Date
 }
@@ -108,4 +108,11 @@ export interface YearlyReportAttributes {
   totalRecu: number
   totalVerse: number
   balance: number
+}
+
+// versement response
+export type VersementRes = VersementAttributes & {
+  items: (VersementItemAttributes & {
+    vignetteValue: VignetteValueAttributes
+  })[]
 }

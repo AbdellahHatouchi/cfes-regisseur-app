@@ -1,14 +1,7 @@
 import { DataTypes, Model, Optional } from 'sequelize'
 import { sequelize } from '..'
+import { VignetteValueAttributes } from 'type'
 
-export interface VignetteValueAttributes {
-  id: string
-  valueDh: number
-  carnetSize: number
-  description?: string
-  createdAt?: Date
-  updatedAt?: Date
-}
 
 type VignetteValueCreationAttributes = Optional<VignetteValueAttributes, 'id' | 'description'>
 

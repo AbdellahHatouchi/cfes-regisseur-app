@@ -12,7 +12,6 @@ export type VersementTableItem = {
   type: 'Vignette' | 'Quittance' | 'Mixte'
   montantTotal: number
   numeroQuittance: string
-  description: string
   createdAt: string
 }
 
@@ -74,13 +73,6 @@ export const columns: ColumnDef<VersementTableItem>[] = [
     cell: ({ row }) => {
       const numeroQuittance = row.getValue('numeroQuittance') as string
       return <div className="font-medium">{numeroQuittance || '-'}</div>
-    }
-  },
-  {
-    accessorKey: 'description',
-    header: 'Description',
-    cell: ({ row }) => {
-      return <div className="max-w-[200px] truncate">{row.getValue('description')}</div>
     }
   },
   {

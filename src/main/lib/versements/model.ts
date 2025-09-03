@@ -1,6 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize'
 import { sequelize } from '..'
-import { VersementAttributes } from '../../../../type'
+import { VersementAttributes } from 'type'
 
 // Define the creation attributes for the Versement model
 interface VersementCreationAttributes extends Optional<VersementAttributes, 'id'> {}
@@ -13,7 +13,7 @@ class Versement extends Model<VersementAttributes, VersementCreationAttributes> 
   public type!: 'Vignette' | 'Quittance' | 'Mixte'
   public montantTotal!: number
   public numeroQuittance?: string
-  public description?: string
+  public note?: string
 
   // timestamps!
   public readonly createdAt!: Date
@@ -48,7 +48,7 @@ Versement.init(
       type: DataTypes.STRING,
       allowNull: true
     },
-    description: {
+    note: {
       type: DataTypes.TEXT,
       allowNull: true
     }

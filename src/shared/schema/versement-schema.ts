@@ -3,7 +3,7 @@ import z from 'zod'
 // Vignette schema
 export const vignetteSchema = z.object({
   type: z.literal('vignette'),
-  vignetteValue: z.string().min(1, 'Valeur de vignette est requis!'),
+  vignetteValueId: z.string().min(1, 'Valeur de vignette est requis!'),
   vignetteQuantity: z.coerce.number().min(1)
 })
 
@@ -14,7 +14,8 @@ export const quittanceSchema = z.object({
   quittanceAmount: z.coerce.number().min(1)
 })
 // Union based on "type"
-export const itemsSchema = z.discriminatedUnion('type', [vignetteSchema, quittanceSchema])
+export const itemSchema = z.discriminatedUnion('type', [vignetteSchema, quittanceSchema])
+export type ItemSchama = z.infer<typeof itemSchema>
 
 export const formSchema = z
   .object({
@@ -22,7 +23,7 @@ export const formSchema = z
     dateVersement: z.coerce.date().transform((d) => d.toDateString()),
     type: z.enum(['Mixte', 'Quittance', 'Vignette']).default('Mixte'),
     note: z.string().default(''),
-    items: itemsSchema.array().min(1, 'Au moins one article est requis!')
+    items: itemSchema.array().min(1, 'Au moins one article est requis!')
   })
   .superRefine((data, ctx) => {
     data.items.forEach((item, index) => {
