@@ -17,7 +17,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { VersementAttributes, VignetteValueAttributes } from 'type'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import z from 'zod'
 import {
   Form,
   FormControl,
@@ -28,66 +27,67 @@ import {
   FormMessage
 } from '@/components/ui/form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { formSchema, VersementForm } from '@shared/schema/versement-schema'
 
 export const Route = createFileRoute('/versements/$versementId/')({
   component: VersementDetailPage
 })
 
-// Vignette schema
-const vignetteSchema = z.object({
-  type: z.literal('vignette'),
-  vignetteValue: z.string().min(1, 'Valeur de vignette est requis!'),
-  vignetteQuantity: z.coerce.number().min(1)
-})
+// // Vignette schema
+// const vignetteSchema = z.object({
+//   type: z.literal('vignette'),
+//   vignetteValue: z.string().min(1, 'Valeur de vignette est requis!'),
+//   vignetteQuantity: z.coerce.number().min(1)
+// })
 
-// Quittance schema
-const quittanceSchema = z.object({
-  type: z.literal('quittance'),
-  quittanceNum: z.string().min(1, 'Numero quittance est requis!'),
-  quittanceAmount: z.coerce.number().min(1)
-})
-// Union based on "type"
-const itemsSchema = z.discriminatedUnion('type', [vignetteSchema, quittanceSchema])
+// // Quittance schema
+// const quittanceSchema = z.object({
+//   type: z.literal('quittance'),
+//   quittanceNum: z.string().min(1, 'Numero quittance est requis!'),
+//   quittanceAmount: z.coerce.number().min(1)
+// })
+// // Union based on "type"
+// const itemsSchema = z.discriminatedUnion('type', [vignetteSchema, quittanceSchema])
 
-const formSchema = z
-  .object({
-    numeroVersement: z.string().default('VER-NN-YYY'),
-    dateVersement: z.coerce.date().transform((d) => d.toDateString()),
-    type: z.enum(['Mixte', 'Quittance', 'Vignette']).default('Mixte'),
-    note: z.string().default(''),
-    items: itemsSchema.array().min(1, 'Au moins one article est requis!')
-  })
-  .superRefine((data, ctx) => {
-    data.items.forEach((item, index) => {
-      if (data.type === 'Vignette' && item.type !== 'vignette') {
-        ctx.addIssue({
-          path: ['items', index, 'type'],
-          message: `Item #${index + 1} doit être une vignette`,
-          code: z.ZodIssueCode.custom
-        })
-      }
-      if (data.type === 'Quittance' && item.type !== 'quittance') {
-        ctx.addIssue({
-          path: ['items', index, 'type'],
-          message: `Item #${index + 1} doit être une quittance`,
-          code: z.ZodIssueCode.custom
-        })
-      }
-    })
+// const formSchema = z
+//   .object({
+//     numeroVersement: z.string().default('VER-NN-YYY'),
+//     dateVersement: z.coerce.date().transform((d) => d.toDateString()),
+//     type: z.enum(['Mixte', 'Quittance', 'Vignette']).default('Mixte'),
+//     note: z.string().default(''),
+//     items: itemsSchema.array().min(1, 'Au moins one article est requis!')
+//   })
+//   .superRefine((data, ctx) => {
+//     data.items.forEach((item, index) => {
+//       if (data.type === 'Vignette' && item.type !== 'vignette') {
+//         ctx.addIssue({
+//           path: ['items', index, 'type'],
+//           message: `Item #${index + 1} doit être une vignette`,
+//           code: z.ZodIssueCode.custom
+//         })
+//       }
+//       if (data.type === 'Quittance' && item.type !== 'quittance') {
+//         ctx.addIssue({
+//           path: ['items', index, 'type'],
+//           message: `Item #${index + 1} doit être une quittance`,
+//           code: z.ZodIssueCode.custom
+//         })
+//       }
+//     })
 
-    if (data.type === 'Mixte') {
-      const hasVignette = data.items.some((item) => item.type === 'vignette')
-      const hasQuittance = data.items.some((item) => item.type === 'quittance')
-      if (!hasVignette || !hasQuittance) {
-        ctx.addIssue({
-          path: ['items'],
-          message: 'Pour un versement mixte, il faut au moins une vignette et une quittance',
-          code: z.ZodIssueCode.custom
-        })
-      }
-    }
-  })
-type VersementForm = z.infer<typeof formSchema>
+//     if (data.type === 'Mixte') {
+//       const hasVignette = data.items.some((item) => item.type === 'vignette')
+//       const hasQuittance = data.items.some((item) => item.type === 'quittance')
+//       if (!hasVignette || !hasQuittance) {
+//         ctx.addIssue({
+//           path: ['items'],
+//           message: 'Pour un versement mixte, il faut au moins une vignette et une quittance',
+//           code: z.ZodIssueCode.custom
+//         })
+//       }
+//     }
+//   })
+// type VersementForm = z.infer<typeof formSchema>
 
 type VersementItemForm = {
   id?: string
