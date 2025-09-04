@@ -94,7 +94,7 @@ export const columns: ColumnDef<VersementTableItem>[] = [
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => navigate({
-                to: '/versements/$versementId',
+                to: '/versements/$versementId/view',
                 params: { versementId: versement.id }
               })}
             >
@@ -102,6 +102,7 @@ export const columns: ColumnDef<VersementTableItem>[] = [
               Voir
             </DropdownMenuItem>
             <DropdownMenuItem
+              disabled={!!versement.numeroQuittance}
               onClick={() => navigate({
                 to: '/versements/$versementId',
                 params: { versementId: versement.id }
@@ -111,6 +112,7 @@ export const columns: ColumnDef<VersementTableItem>[] = [
               Modifier
             </DropdownMenuItem>
             <DropdownMenuItem
+              disabled={!!versement.numeroQuittance}
               onClick={() => {
                 if (confirm('Êtes-vous sûr de vouloir supprimer ce versement ?')) {
                   // Handle delete

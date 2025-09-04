@@ -20,6 +20,7 @@ import { Route as VersementsVersementIdIndexRouteImport } from './routes/verseme
 import { Route as UsersUserIdIndexRouteImport } from './routes/users/$userId/index'
 import { Route as RecusRecuIdIndexRouteImport } from './routes/recus/$recuId/index'
 import { Route as FiscalAttestationsFiscalATIdIndexRouteImport } from './routes/fiscal-attestations/$fiscalATId/index'
+import { Route as VersementsVersementIdViewIndexRouteImport } from './routes/versements/$versementId/view/index'
 import { Route as UsersUserIdViewIndexRouteImport } from './routes/users/$userId/view/index'
 import { Route as FiscalAttestationsFiscalATIdViewIndexRouteImport } from './routes/fiscal-attestations/$fiscalATId/view/index'
 
@@ -80,6 +81,12 @@ const FiscalAttestationsFiscalATIdIndexRoute =
     path: '/fiscal-attestations/$fiscalATId/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const VersementsVersementIdViewIndexRoute =
+  VersementsVersementIdViewIndexRouteImport.update({
+    id: '/versements/$versementId/view/',
+    path: '/versements/$versementId/view/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const UsersUserIdViewIndexRoute = UsersUserIdViewIndexRouteImport.update({
   id: '/users/$userId/view/',
   path: '/users/$userId/view/',
@@ -106,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/versements/$versementId': typeof VersementsVersementIdIndexRoute
   '/fiscal-attestations/$fiscalATId/view': typeof FiscalAttestationsFiscalATIdViewIndexRoute
   '/users/$userId/view': typeof UsersUserIdViewIndexRoute
+  '/versements/$versementId/view': typeof VersementsVersementIdViewIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -121,6 +129,7 @@ export interface FileRoutesByTo {
   '/versements/$versementId': typeof VersementsVersementIdIndexRoute
   '/fiscal-attestations/$fiscalATId/view': typeof FiscalAttestationsFiscalATIdViewIndexRoute
   '/users/$userId/view': typeof UsersUserIdViewIndexRoute
+  '/versements/$versementId/view': typeof VersementsVersementIdViewIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -137,6 +146,7 @@ export interface FileRoutesById {
   '/versements/$versementId/': typeof VersementsVersementIdIndexRoute
   '/fiscal-attestations/$fiscalATId/view/': typeof FiscalAttestationsFiscalATIdViewIndexRoute
   '/users/$userId/view/': typeof UsersUserIdViewIndexRoute
+  '/versements/$versementId/view/': typeof VersementsVersementIdViewIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/versements/$versementId'
     | '/fiscal-attestations/$fiscalATId/view'
     | '/users/$userId/view'
+    | '/versements/$versementId/view'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/versements/$versementId'
     | '/fiscal-attestations/$fiscalATId/view'
     | '/users/$userId/view'
+    | '/versements/$versementId/view'
   id:
     | '__root__'
     | '/'
@@ -184,6 +196,7 @@ export interface FileRouteTypes {
     | '/versements/$versementId/'
     | '/fiscal-attestations/$fiscalATId/view/'
     | '/users/$userId/view/'
+    | '/versements/$versementId/view/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -200,6 +213,7 @@ export interface RootRouteChildren {
   VersementsVersementIdIndexRoute: typeof VersementsVersementIdIndexRoute
   FiscalAttestationsFiscalATIdViewIndexRoute: typeof FiscalAttestationsFiscalATIdViewIndexRoute
   UsersUserIdViewIndexRoute: typeof UsersUserIdViewIndexRoute
+  VersementsVersementIdViewIndexRoute: typeof VersementsVersementIdViewIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -281,6 +295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FiscalAttestationsFiscalATIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/versements/$versementId/view/': {
+      id: '/versements/$versementId/view/'
+      path: '/versements/$versementId/view'
+      fullPath: '/versements/$versementId/view'
+      preLoaderRoute: typeof VersementsVersementIdViewIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/users/$userId/view/': {
       id: '/users/$userId/view/'
       path: '/users/$userId/view'
@@ -314,6 +335,7 @@ const rootRouteChildren: RootRouteChildren = {
   FiscalAttestationsFiscalATIdViewIndexRoute:
     FiscalAttestationsFiscalATIdViewIndexRoute,
   UsersUserIdViewIndexRoute: UsersUserIdViewIndexRoute,
+  VersementsVersementIdViewIndexRoute: VersementsVersementIdViewIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

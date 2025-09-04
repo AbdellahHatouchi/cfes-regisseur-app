@@ -39,6 +39,7 @@ declare module '@electron-toolkit/preload' {
       invoke(channel: 'getVersements', filters?: { year?: number; month?: number }): Promise<any>
       invoke(channel: 'getVersementById', id: string): Promise<any>
       invoke(channel: 'updateVersement', data: any): Promise<any>
+      invoke(channel: 'assignQuittanceOfVersement', data: any): Promise<any>
       invoke(channel: 'deleteVersement', id: string): Promise<any>
       invoke(channel: 'getVersementsTotal', filters?: { year?: number; month?: number }): Promise<any>
       // Reports

@@ -40,7 +40,8 @@ import {
   getVersements,
   updateVersement,
   getVersementsTotal,
-  getNextVersementNumber
+  getNextVersementNumber,
+  assignQuittanceOfVersement
 } from './lib/versements/controller'
 import {
   getMonthlyReport,
@@ -159,6 +160,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('getVersements', (_e, filters) => getVersements(filters?.year, filters?.month))
   ipcMain.handle('getVersementById', (_e, id) => getVersementById(id))
   ipcMain.handle('updateVersement', (_e, data) => updateVersement(data.id, data))
+  ipcMain.handle('assignQuittanceOfVersement', (_e, data) => assignQuittanceOfVersement(data.id, data))
   ipcMain.handle('deleteVersement', (_e, id) => deleteVersement(id))
   ipcMain.handle('getVersementsTotal', (_e, filters) => getVersementsTotal(filters?.year, filters?.month))
 

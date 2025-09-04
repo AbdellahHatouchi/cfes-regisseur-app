@@ -4,7 +4,12 @@ import VersementItem from './items.model'
 import VignetteValue from '../vignette-values/model'
 import { VersementAttributes } from '../../../../type'
 import { sequelize } from '..'
-import { formSchema, ItemSchama } from '@shared/schema/versement-schema'
+import {
+  AssignQuittanceData,
+  assignQuittanceformSchema,
+  formSchema,
+  ItemSchema
+} from '@shared/schema/versement-schema'
 
 export const getNextVersementNumber = async (): Promise<string> => {
   try {
@@ -34,7 +39,7 @@ export const getNextVersementNumber = async (): Promise<string> => {
 }
 
 export const createVersement = async (
-  data: Omit<VersementAttributes, 'id'> & { items: ItemSchama[] }
+  data: Omit<VersementAttributes, 'id'> & { items: ItemSchema[] }
 ): Promise<{ success: boolean; data?: any; message?: string }> => {
   const t = await sequelize.transaction()
   try {
@@ -50,7 +55,7 @@ export const createVersement = async (
       },
       { transaction: t }
     )
-    
+
     let total = 0
     for (const item of formData.items) {
       if (item.type === 'vignette') {
@@ -69,13 +74,13 @@ export const createVersement = async (
           { transaction: t }
         )
       } else {
-        total += item.quittanceAmount
+        total += item.itemAmount
         await VersementItem.create(
           {
             versementId: versement.getDataValue('id'),
             type: 'quittance',
             quittanceNum: item.quittanceNum,
-            itemAmount: Number(item.quittanceAmount.toFixed(2))
+            itemAmount: Number(item.itemAmount.toFixed(2))
           },
           { transaction: t }
         )
@@ -83,17 +88,7 @@ export const createVersement = async (
     }
     await versement.update({ montantTotal: Number(total.toFixed(2)) }, { transaction: t })
     await t.commit()
-    const versementWithItems = await Versement.findByPk(versement.getDataValue('id'), {
-      include: [
-        {
-          model: VersementItem,
-          as: 'items',
-          include: [{ model: VignetteValue, as: 'vignetteValue' }]
-        }
-      ],
-      raw: true
-    })
-    return { success: true, data: versementWithItems?.toJSON() }
+    return { success: true, data: { versementId: versement.getDataValue('id') } }
   } catch (error) {
     await t.rollback()
     console.error('Error creating versement:', error)
@@ -134,8 +129,8 @@ export const getVersements = async (
       order: [['dateVersement', 'DESC']],
       raw: true
     })
-    console.log('vers',versements);
-    
+    console.log('vers', versements)
+
     return { success: true, data: versements }
   } catch (error) {
     console.error('Error fetching versements:', error)
@@ -166,117 +161,142 @@ export const getVersementById = async (
   }
 }
 
-// export const updateVersement = async (
-//   id: string,
-//   data: Partial<VersementAttributes> & {
-//     items?: Array<{
-//       id?: string
-//       type: 'vignette' | 'quittance'
-//       vignetteValueId?: string
-//       quantity?: number
-//       quittanceNum?: string
-//       amountDh?: number
-//       _delete?: boolean
-//     }>
-//   }
-// ): Promise<{ success: boolean; data?: any; message?: string }> => {
-//   const t = await sequelize.transaction()
-//   try {
-//     const versement = await Versement.findByPk(id, { transaction: t })
-//     if (!versement) {
-//       await t.rollback()
-//       return { success: false, message: 'Versement non trouvé' }
-//     }
+export const updateVersement = async (
+  id: string,
+  formData: Partial<VersementAttributes> & { items: ItemSchema[] }
+): Promise<{ success: boolean; data?: any; message?: string }> => {
+  const t = await sequelize.transaction()
+  try {
+    const data = formSchema.parse(formData)
+    const versement = await Versement.findByPk(id, { transaction: t })
+    if (!versement) {
+      await t.rollback()
+      return { success: false, message: 'Versement non trouvé' }
+    }
+    if (!versement.getDataValue('numeroQuittance')) {
+      return {
+        success: false,
+        message: 'Impossible de modifier le versement après l’attribution du numéro de quittance.'
+      }
+    }
+    const { items, ...fields } = data
+    await versement.update(
+      {
+        dateVersement: new Date(fields.dateVersement),
+        type: fields.type,
+        note: fields.note
+      },
+      { transaction: t }
+    )
 
-//     const { items, ...fields } = data
-//     await versement.update(fields, { transaction: t })
+    if (items) {
+      let total = 0
+      for (const item of items) {
+        if (item._delete && item.id) {
+          await VersementItem.destroy({ where: { id: item.id }, transaction: t })
+          continue
+        }
+        if (item.type === 'vignette') {
+          const vv = await VignetteValue.findByPk(item.vignetteValueId, { transaction: t })
+          if (!vv) throw new Error('Invalid vignette value')
+          const amount = Number(vv.get('valueDh')) * item.vignetteQuantity
+          if (item.id) {
+            await VersementItem.update(
+              {
+                type: 'vignette',
+                vignetteValueId: item.vignetteValueId,
+                vignetteQuantity: item.vignetteQuantity,
+                quittanceNum: null,
+                itemAmount: Number(amount.toFixed(2))
+              },
+              { where: { id: item.id }, transaction: t }
+            )
+          } else {
+            await VersementItem.create(
+              {
+                versementId: versement.getDataValue('id'),
+                type: 'vignette',
+                vignetteValueId: item.vignetteValueId,
+                vignetteQuantity: item.vignetteQuantity,
+                itemAmount: Number(amount.toFixed(2))
+              },
+              { transaction: t }
+            )
+          }
+          total += amount
+        } else {
+          if (item.id) {
+            await VersementItem.update(
+              {
+                type: 'quittance',
+                vignetteValueId: null,
+                vignetteQuantity: null,
+                quittanceNum: item.quittanceNum,
+                itemAmount: Number(item.itemAmount.toFixed(2))
+              },
+              { where: { id: item.id }, transaction: t }
+            )
+          } else {
+            await VersementItem.create(
+              {
+                versementId: versement.id,
+                type: 'quittance',
+                quittanceNum: item.quittanceNum,
+                itemAmount: Number(item.itemAmount.toFixed(2))
+              },
+              { transaction: t }
+            )
+          }
+          total += item.itemAmount
+        }
+      }
+      await versement.update({ montantTotal: Number(total.toFixed(2)) }, { transaction: t })
+    }
 
-//     if (items) {
-//       let total = 0
-//       for (const item of items) {
-//         if (item._delete && item.id) {
-//           await VersementItem.destroy({ where: { id: item.id }, transaction: t })
-//           continue
-//         }
-//         if (item.type === 'vignette') {
-//           if (!item.vignetteValueId || !item.quantity)
-//             throw new Error('vignette item requires vignetteValueId and quantity')
-//           const vv = await VignetteValue.findByPk(item.vignetteValueId, { transaction: t })
-//           if (!vv) throw new Error('Invalid vignette value')
-//           const amount = Number(vv.get('valueDh')) * item.quantity
-//           if (item.id) {
-//             await VersementItem.update(
-//               {
-//                 type: 'vignette',
-//                 vignetteValueId: item.vignetteValueId,
-//                 quantity: item.quantity,
-//                 quittanceNum: null,
-//                 amountDh: Number(amount.toFixed(2))
-//               },
-//               { where: { id: item.id }, transaction: t }
-//             )
-//           } else {
-//             await VersementItem.create(
-//               {
-//                 versementId: versement.id,
-//                 type: 'vignette',
-//                 vignetteValueId: item.vignetteValueId,
-//                 quantity: item.quantity,
-//                 amountDh: Number(amount.toFixed(2))
-//               },
-//               { transaction: t }
-//             )
-//           }
-//           total += amount
-//         } else {
-//           if (!item.quittanceNum || item.amountDh == null)
-//             throw new Error('quittance item requires quittanceNum and amountDh')
-//           if (item.id) {
-//             await VersementItem.update(
-//               {
-//                 type: 'quittance',
-//                 vignetteValueId: null,
-//                 quantity: null,
-//                 quittanceNum: item.quittanceNum,
-//                 amountDh: Number(item.amountDh.toFixed(2))
-//               },
-//               { where: { id: item.id }, transaction: t }
-//             )
-//           } else {
-//             await VersementItem.create(
-//               {
-//                 versementId: versement.id,
-//                 type: 'quittance',
-//                 quittanceNum: item.quittanceNum,
-//                 amountDh: Number(item.amountDh.toFixed(2))
-//               },
-//               { transaction: t }
-//             )
-//           }
-//           total += item.amountDh
-//         }
-//       }
-//       await versement.update({ montantTotal: Number(total.toFixed(2)) }, { transaction: t })
-//     }
+    await t.commit()
+    return { success: true, data: { versementId: versement.getDataValue('id') } }
+  } catch (error) {
+    await t.rollback()
+    console.error('Error updating versement:', error)
+    return { success: false, message: 'Erreur lors de la mise à jour du versement' }
+  }
+}
+export const assignQuittanceOfVersement = async (
+  id: string,
+  formData: AssignQuittanceData
+): Promise<{ success: boolean; data?: any; message?: string }> => {
+  const t = await sequelize.transaction()
+  try {
+    const data = assignQuittanceformSchema.parse(formData)
+    const versement = await Versement.findByPk(id, { transaction: t })
+    if (!versement) {
+      await t.rollback()
+      return { success: false, message: 'Versement non trouvé' }
+    }
 
-//     await t.commit()
-//     const versementWithItems = await Versement.findByPk(versement.id, {
-//       include: [
-//         {
-//           model: VersementItem,
-//           as: 'items',
-//           include: [{ model: VignetteValue, as: 'vignetteValue' }]
-//         }
-//       ]
-//     })
-//     return { success: true, data: versementWithItems?.toJSON() }
-//   } catch (error) {
-//     await t.rollback()
-//     console.error('Error updating versement:', error)
-//     return { success: false, message: 'Erreur lors de la mise à jour du versement' }
-//   }
-// }
-export const updateVersement = async (id: string, data: any) => {}
+    if (!versement.getDataValue('numeroQuittance')) {
+      return {
+        success: false,
+        message: 'Impossible de modifier le versement après l’attribution du numéro de quittance.'
+      }
+    }
+
+    await versement.update(
+      {
+        dateVersement: data.assignQuittanceDate,
+        numeroQuittance: data.assignQuittanceNum
+      },
+      { transaction: t }
+    )
+
+    await t.commit()
+    return { success: true, data: { versementId: versement.getDataValue('id') } }
+  } catch (error) {
+    await t.rollback()
+    console.error('Error assign Quittance versement:', error)
+    return { success: false, message: 'Erreur lors de la assignement de Quittance' }
+  }
+}
 
 export const deleteVersement = async (
   id: string
@@ -286,7 +306,12 @@ export const deleteVersement = async (
     if (!versement) {
       return { success: false, message: 'Versement non trouvé' }
     }
-
+    if (!versement.getDataValue('numeroQuittance')) {
+      return {
+        success: false,
+        message: 'Impossible de supprimer le versement après l’attribution du numéro de quittance.'
+      }
+    }
     await versement.destroy()
     return { success: true }
   } catch (error) {
