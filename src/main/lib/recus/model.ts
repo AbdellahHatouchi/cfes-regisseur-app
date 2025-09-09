@@ -11,7 +11,8 @@ class Recu extends Model<RecuAttributes, RecuCreationAttributes> implements Recu
   public numeroRecu!: string
   public dateRecu!: Date
   public montantTotal!: number
-  public description?: string
+  public note?: string
+  public status!: 'demande' | 'accepte' | 'rejected' | 'completed'
 
   // timestamps!
   public readonly createdAt!: Date
@@ -38,9 +39,14 @@ Recu.init(
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
     },
-    description: {
+    note: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    status: {
+      type: DataTypes.ENUM('demande', 'accepte', 'rejected', 'completed'),
+      allowNull: false,
+      defaultValue: 'demande'
     }
   },
   {
