@@ -40,7 +40,8 @@ export interface RecuAttributes {
   numeroRecu: string
   dateRecu: Date
   montantTotal: number
-  description?: string
+  note?: string
+  status: 'demande' | 'accepte' | 'rejected' | 'completed'
   createdAt?: Date
   updatedAt?: Date
 }
@@ -74,6 +75,16 @@ export interface RecuItemAttributes {
   vignetteValueId: string
   quantity: number
   subtotalDh: number
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface RecuSeriesAttributes {
+  id: string
+  recuId: string
+  vignetteValueId: string
+  seriesStart: string
+  seriesEnd: string
   createdAt?: Date
   updatedAt?: Date
 }

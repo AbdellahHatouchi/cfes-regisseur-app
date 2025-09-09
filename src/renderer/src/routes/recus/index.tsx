@@ -91,7 +91,8 @@ export function RecusPage() {
     numeroRecu: recu.numeroRecu,
     dateRecu: format(new Date(recu.dateRecu), 'dd MMMM yyyy', { locale: fr }),
     montantTotal: recu.montantTotal,
-    description: recu.description || '',
+    note: (recu as any).note || '',
+    status: (recu as any).status,
     createdAt: format(new Date(recu.createdAt!), 'dd MMMM yyyy', { locale: fr })
   }))
 

@@ -9,7 +9,8 @@ export type RecuTableItem = {
   numeroRecu: string
   dateRecu: string
   montantTotal: number
-  description: string
+  note: string
+  status: 'demande' | 'accepte' | 'rejected' | 'completed'
   createdAt: string
 }
 
@@ -41,10 +42,20 @@ export const columns: ColumnDef<RecuTableItem>[] = [
     }
   },
   {
-    accessorKey: 'description',
-    header: 'Description',
+    accessorKey: 'note',
+    header: 'Note',
     cell: ({ row }) => {
-      return <div className="max-w-[200px] truncate">{row.getValue('description')}</div>
+      return <div className="max-w-[200px] truncate">{row.getValue('note')}</div>
+    }
+  },
+  {
+    accessorKey: 'status',
+    header: 'Statut',
+    cell: ({ row }) => {
+      const status = row.getValue('status') as RecuTableItem['status']
+      const color = status === 'demande' ? 'text-yellow-600' : status === 'accepte' ? 'text-blue-600' : status === 'completed' ? 'text-green-600' : 'text-red-600'
+      const label = status === 'demande' ? 'Demande' : status === 'accepte' ? 'Accepté' : status === 'completed' ? 'Complété' : 'Rejeté'
+      return <div className={`font-medium ${color}`}>{label}</div>
     }
   },
   {

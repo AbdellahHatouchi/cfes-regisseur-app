@@ -19,7 +19,7 @@ export const Route = createFileRoute('/recus/$recuId/')({
 interface RecuFormData {
   numeroRecu: string
   dateRecu: string
-  description: string
+  note: string
 }
 
 type RecuItemForm = { id?: string; vignetteValueId: string; quantity: number; _delete?: boolean }
@@ -27,8 +27,9 @@ type RecuItemForm = { id?: string; vignetteValueId: string; quantity: number; _d
 export function RecuDetailPage() {
   const { recuId } = Route.useParams()
   const navigate = useNavigate()
-  const [, setRecu] = useState<RecuAttributes | null>(null)
+  const [recu, setRecu] = useState<(RecuAttributes & { series?: any[] }) | null>(null)
   const [items, setItems] = useState<RecuItemForm[]>([])
+  const [series, setSeries] = useState<{ vignetteValueId: string; seriesStart: string; seriesEnd: string }[]>([])
   const [vignetteValues, setVignetteValues] = useState<VignetteValueAttributes[]>([])
   const [loading, setLoading] = useState(false)
   const [isNew, setIsNew] = useState(false)
@@ -58,10 +59,11 @@ export function RecuDetailPage() {
         setRecu(response.data)
         setValue('numeroRecu', response.data.numeroRecu)
         setValue('dateRecu', new Date(response.data.dateRecu).toISOString().split('T')[0])
-        setValue('description', response.data.description || '')
+        setValue('note', response.data.note || '')
         setItems(
           (response.data.items || []).map((it: any) => ({ id: it.id, vignetteValueId: it.vignetteValueId, quantity: it.quantity }))
         )
+        setSeries((response.data.series || []).map((s: any) => ({ vignetteValueId: s.vignetteValueId, seriesStart: s.seriesStart, seriesEnd: s.seriesEnd })))
       } else {
         alert(response.message)
         navigate({ to: '/recus' })
@@ -78,7 +80,7 @@ export function RecuDetailPage() {
       const recuData: any = {
         numeroRecu: data.numeroRecu,
         dateRecu: new Date(data.dateRecu),
-        description: data.description,
+        note: data.note,
         items: items.filter(i => !i._delete).map(({ id, ...rest }) => rest)
       }
 
@@ -126,6 +128,60 @@ export function RecuDetailPage() {
     }
   }
 
+  const canEdit = isNew || recu?.status === 'demande'
+  const canAccept = !isNew && recu?.status === 'demande'
+  const canComplete = !isNew && recu?.status === 'accepte'
+  const canReject = !isNew && recu?.status === 'demande'
+
+  const handleAccept = async () => {
+    if (!recu) return
+    setLoading(true)
+    try {
+      const res = await window.electron.ipcRenderer.invoke('acceptRecu', { id: recu.id, series })
+      if (res.success) {
+        alert('Reçu accepté')
+        navigate({ to: '/recus' })
+      } else {
+        alert(res.message)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleComplete = async () => {
+    if (!recu) return
+    setLoading(true)
+    try {
+      const res = await window.electron.ipcRenderer.invoke('completeRecu', recu.id)
+      if (res.success) {
+        alert('Reçu complété')
+        navigate({ to: '/recus' })
+      } else {
+        alert(res.message)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleReject = async () => {
+    if (!recu) return
+    if (!confirm('Confirmer le rejet du reçu ?')) return
+    setLoading(true)
+    try {
+      const res = await window.electron.ipcRenderer.invoke('rejectRecu', recu.id)
+      if (res.success) {
+        alert('Reçu rejeté')
+        navigate({ to: '/recus' })
+      } else {
+        alert(res.message)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -138,11 +194,11 @@ export function RecuDetailPage() {
             Retour
           </Button>
           <Heading
-            title={isNew ? 'Nouveau Reçu' : 'Modifier Reçu'}
-            description={isNew ? 'Créez un nouveau reçu' : 'Modifiez les informations du reçu'}
+            title={isNew ? 'Nouveau Reçu' : 'Détails du Reçu'}
+            description={isNew ? 'Créez un nouveau reçu' : 'Gérez le cycle de vie du reçu'}
           />
         </div>
-        {!isNew && (
+        {!isNew && canEdit && (
           <Button
             variant="destructive"
             onClick={handleDelete}
@@ -168,6 +224,7 @@ export function RecuDetailPage() {
                     id="numeroRecu"
                     {...register('numeroRecu', { required: 'Le numéro du reçu est requis' })}
                     placeholder="Ex: REC-2024-001"
+                    disabled={!canEdit}
                   />
                   {errors.numeroRecu && (
                     <p className="text-sm text-red-500">{errors.numeroRecu.message}</p>
@@ -179,6 +236,7 @@ export function RecuDetailPage() {
                     id="dateRecu"
                     type="date"
                     {...register('dateRecu', { required: 'La date du reçu est requise' })}
+                    disabled={!canEdit}
                   />
                   {errors.dateRecu && (
                     <p className="text-sm text-red-500">{errors.dateRecu.message}</p>
@@ -199,6 +257,7 @@ export function RecuDetailPage() {
                             copy[idx].vignetteValueId = value
                             setItems(copy)
                           }}
+                          disabled={!canEdit}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Sélectionnez la valeur" />
@@ -220,10 +279,11 @@ export function RecuDetailPage() {
                             copy[idx].quantity = parseInt(e.target.value || '0')
                             setItems(copy)
                           }}
+                          disabled={!canEdit}
                         />
                       </div>
                       <div className="col-span-2 flex justify-end">
-                        <Button type="button" variant="ghost" onClick={() => {
+                        <Button type="button" variant="ghost" disabled={!canEdit} onClick={() => {
                           const copy = [...items]
                           if (copy[idx].id) copy[idx]._delete = true
                           else copy.splice(idx, 1)
@@ -234,38 +294,120 @@ export function RecuDetailPage() {
                       </div>
                     </div>
                   ))}
-                  <Button type="button" variant="outline" onClick={() => setItems([...items, { vignetteValueId: '', quantity: 1 }])}>
-                    <Plus className="h-4 w-4 mr-2" /> Ajouter un article
-                  </Button>
+                  {canEdit && (
+                    <Button type="button" variant="outline" onClick={() => setItems([...items, { vignetteValueId: '', quantity: 1 }])}>
+                      <Plus className="h-4 w-4 mr-2" /> Ajouter un article
+                    </Button>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="note">Note</Label>
                 <Textarea
-                  id="description"
-                  {...register('description')}
-                  placeholder="Description optionnelle du reçu"
+                  id="note"
+                  {...register('note')}
+                  placeholder="Note optionnelle du reçu"
                   rows={3}
+                  disabled={!canEdit}
                 />
               </div>
 
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate({ to: '/recus' })}
-                >
-                  Annuler
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {loading ? 'Sauvegarde...' : (isNew ? 'Créer' : 'Mettre à jour')}
-                </Button>
+              <div className="flex justify-between space-x-2 pt-4">
+                <div className="flex items-center space-x-2">
+                  {!isNew && (
+                    <>
+                      <Button type="button" variant="outline" disabled={!canAccept || loading} onClick={handleAccept}>Accepter</Button>
+                      <Button type="button" variant="outline" disabled={!canComplete || loading} onClick={handleComplete}>Compléter</Button>
+                      <Button type="button" variant="destructive" disabled={!canReject || loading} onClick={handleReject}>Rejeter</Button>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate({ to: '/recus' })}
+                  >
+                    Annuler
+                  </Button>
+                  {canEdit && (
+                    <Button type="submit" disabled={loading}>
+                      <Save className="mr-2 h-4 w-4" />
+                      {loading ? 'Sauvegarde...' : (isNew ? 'Créer' : 'Mettre à jour')}
+                    </Button>
+                  )}
+                </div>
               </div>
             </form>
           </CardContent>
         </Card>
+        {!isNew && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Attribution des séries</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {(series || []).map((s, idx) => (
+                  <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                    <div className="col-span-4">
+                      <Select
+                        value={s.vignetteValueId}
+                        onValueChange={(value) => {
+                          const copy = [...series]
+                          copy[idx].vignetteValueId = value
+                          setSeries(copy)
+                        }}
+                        disabled={!canAccept}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Valeur vignette" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vignetteValues.map(v => (
+                            <SelectItem key={v.id} value={v.id}>{v.valueDh.toFixed(2)} DH</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-3">
+                      <Input placeholder="Série début" value={s.seriesStart} onChange={(e) => {
+                        const copy = [...series]
+                        copy[idx].seriesStart = e.target.value
+                        setSeries(copy)
+                      }} disabled={!canAccept} />
+                    </div>
+                    <div className="col-span-3">
+                      <Input placeholder="Série fin" value={s.seriesEnd} onChange={(e) => {
+                        const copy = [...series]
+                        copy[idx].seriesEnd = e.target.value
+                        setSeries(copy)
+                      }} disabled={!canAccept} />
+                    </div>
+                    <div className="col-span-2 flex justify-end">
+                      <Button type="button" variant="ghost" disabled={!canAccept} onClick={() => {
+                        const copy = [...series]
+                        copy.splice(idx, 1)
+                        setSeries(copy)
+                      }}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {canAccept && (
+                  <Button type="button" variant="outline" onClick={() => setSeries([...(series || []), { vignetteValueId: '', seriesStart: '', seriesEnd: '' }])}>
+                    <Plus className="h-4 w-4 mr-2" /> Ajouter une série
+                  </Button>
+                )}
+                <div className="pt-2">
+                  <Button type="button" onClick={handleAccept} disabled={!canAccept || loading}>Enregistrer l’acceptation</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </>
   )
