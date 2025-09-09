@@ -8,84 +8,76 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Save, Trash2, Plus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { RecuAttributes, VignetteValueAttributes } from 'type'
-import { useForm } from 'react-hook-form'
+import { useForm, useFieldArray } from 'react-hook-form'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { recuFormSchema, RecuForm } from '@shared/schema/recu-schema'
+
+const fetchRecu = async (recuId: string) => {
+  if (recuId === 'new') return null
+  const response = await window.electron.ipcRenderer.invoke('getRecuById', recuId)
+  if (response.success) return response.data
+  throw new Error(response.message)
+}
+const loadVignetteValues = async () => {
+  const res = await window.electron.ipcRenderer.invoke('listVignetteValues')
+  if (res.success) return res.data
+  throw new Error(res.message)
+}
 
 export const Route = createFileRoute('/recus/$recuId/')({
-  component: RecuDetailPage
+  component: RecuDetailPage,
+  loader: async ({ params }) => {
+    const recu = await fetchRecu(params.recuId)
+    const vignetteValues = await loadVignetteValues()
+    return { recu, vignetteValues }
+  }
 })
-
-interface RecuFormData {
-  numeroRecu: string
-  dateRecu: string
-  note: string
-}
 
 type RecuItemForm = { id?: string; vignetteValueId: string; quantity: number; _delete?: boolean }
 
 export function RecuDetailPage() {
   const { recuId } = Route.useParams()
   const navigate = useNavigate()
-  const [recu, setRecu] = useState<(RecuAttributes & { series?: any[] }) | null>(null)
-  const [items, setItems] = useState<RecuItemForm[]>([])
-  const [series, setSeries] = useState<{ vignetteValueId: string; seriesStart: string; seriesEnd: string }[]>([])
-  const [vignetteValues, setVignetteValues] = useState<VignetteValueAttributes[]>([])
+  const { recu, vignetteValues } = Route.useLoaderData() as { recu: any | null; vignetteValues: VignetteValueAttributes[] }
+  const [series, setSeries] = useState<{ vignetteValueId: string; seriesStart: string; seriesEnd: string }[]>(recu?.series || [])
   const [loading, setLoading] = useState(false)
   const [isNew, setIsNew] = useState(false)
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<RecuFormData>()
+  const form = useForm<RecuForm>({
+    resolver: zodResolver(recuFormSchema),
+    defaultValues: {
+      numeroRecu: '',
+      dateRecu: new Date(),
+      note: '',
+      items: []
+    }
+  })
+  const { fields, append, update } = useFieldArray({ control: form.control, name: 'items' })
 
   useEffect(() => {
-    if (recuId === 'new') {
-      setIsNew(true)
-      setValue('dateRecu', new Date().toISOString().split('T')[0])
-      loadVignetteValues()
+    setIsNew(recuId === 'new')
+    if (recu) {
+      form.reset({
+        numeroRecu: recu.numeroRecu,
+        dateRecu: new Date(recu.dateRecu),
+        note: recu.note || '',
+        items: (recu.items || []).map((it: any) => ({ id: it.id, vignetteValueId: it.vignetteValueId, quantity: it.quantity, _delete: false }))
+      })
+      setSeries((recu.series || []).map((s: any) => ({ vignetteValueId: s.vignetteValueId, seriesStart: s.seriesStart, seriesEnd: s.seriesEnd })))
     } else {
-      fetchRecu()
-      loadVignetteValues()
+      form.reset({ numeroRecu: '', dateRecu: new Date(), note: '', items: [] })
     }
   }, [recuId])
 
-  const loadVignetteValues = async () => {
-    const res = await window.electron.ipcRenderer.invoke('listVignetteValues')
-    if (res.success) setVignetteValues(res.data)
-  }
-
-  const fetchRecu = async () => {
-    try {
-      const response = await window.electron.ipcRenderer.invoke('getRecuById', recuId)
-      if (response.success) {
-        setRecu(response.data)
-        setValue('numeroRecu', response.data.numeroRecu)
-        setValue('dateRecu', new Date(response.data.dateRecu).toISOString().split('T')[0])
-        setValue('note', response.data.note || '')
-        setItems(
-          (response.data.items || []).map((it: any) => ({ id: it.id, vignetteValueId: it.vignetteValueId, quantity: it.quantity }))
-        )
-        setSeries((response.data.series || []).map((s: any) => ({ vignetteValueId: s.vignetteValueId, seriesStart: s.seriesStart, seriesEnd: s.seriesEnd })))
-      } else {
-        alert(response.message)
-        navigate({ to: '/recus' })
-      }
-    } catch (error) {
-      console.error('Error fetching recu:', error)
-      alert('Erreur lors de la récupération du reçu')
-    }
-  }
-
-  const onSubmit = async (data: RecuFormData) => {
+  const onSubmit = async (data: RecuForm) => {
     setLoading(true)
     try {
-      const recuData: any = {
-        numeroRecu: data.numeroRecu,
-        dateRecu: new Date(data.dateRecu),
-        note: data.note,
-        items: items.filter(i => !i._delete).map(({ id, ...rest }) => rest)
-      }
-
       if (isNew) {
-        const response = await window.electron.ipcRenderer.invoke('createRecu', recuData)
+        const payload = { ...data, items: data.items.filter((i) => !i._delete).map(({ _delete, ...rest }) => rest) }
+        const response = await window.electron.ipcRenderer.invoke('createRecu', payload)
         if (response.success) {
           alert('Reçu créé avec succès')
           navigate({ to: '/recus' })
@@ -93,7 +85,7 @@ export function RecuDetailPage() {
           alert(response.message)
         }
       } else {
-        const response = await window.electron.ipcRenderer.invoke('updateRecu', { id: recuId, ...recuData, items })
+        const response = await window.electron.ipcRenderer.invoke('updateRecu', { id: recuId, ...data, items: data.items })
         if (response.success) {
           alert('Reçu mis à jour avec succès')
           navigate({ to: '/recus' })
@@ -216,86 +208,90 @@ export function RecuDetailPage() {
             <CardTitle>Informations du Reçu</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="numeroRecu">Numéro du Reçu *</Label>
-                  <Input
-                    id="numeroRecu"
-                    {...register('numeroRecu', { required: 'Le numéro du reçu est requis' })}
-                    placeholder="Ex: REC-2024-001"
-                    disabled={!canEdit}
-                  />
-                  {errors.numeroRecu && (
-                    <p className="text-sm text-red-500">{errors.numeroRecu.message}</p>
+                <FormField
+                  control={form.control}
+                  name="numeroRecu"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Numéro du Reçu</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: REC-2024-001" disabled={!canEdit} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dateRecu">Date du Reçu *</Label>
-                  <Input
-                    id="dateRecu"
-                    type="date"
-                    {...register('dateRecu', { required: 'La date du reçu est requise' })}
-                    disabled={!canEdit}
-                  />
-                  {errors.dateRecu && (
-                    <p className="text-sm text-red-500">{errors.dateRecu.message}</p>
+                />
+                <FormField
+                  control={form.control}
+                  name="dateRecu"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date du Reçu</FormLabel>
+                      <FormControl>
+                        <Input type="date" disabled={!canEdit} value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''} onChange={(e) => field.onChange(new Date(e.target.value))} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
               </div>
 
               <div className="space-y-2">
                 <Label>Articles</Label>
                 <div className="space-y-2">
-                  {items.map((item, idx) => (
-                    <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                  {fields.map((item, idx) => (
+                    <div key={item.id || idx} className="grid grid-cols-12 gap-2 items-center">
                       <div className="col-span-7">
-                        <Select
-                          value={item.vignetteValueId}
-                          onValueChange={(value) => {
-                            const copy = [...items]
-                            copy[idx].vignetteValueId = value
-                            setItems(copy)
-                          }}
-                          disabled={!canEdit}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionnez la valeur" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {vignetteValues.map(v => (
-                              <SelectItem key={v.id} value={v.id}>{v.valueDh.toFixed(2)} DH - Carnet {v.carnetSize}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormField
+                          control={form.control}
+                          name={`items.${idx}.vignetteValueId`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Valeur</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canEdit}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Sélectionnez la valeur" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {vignetteValues.map(v => (
+                                    <SelectItem key={v.id} value={v.id}>{v.valueDh.toFixed(2)} DH - Carnet {v.carnetSize}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
                       <div className="col-span-3">
-                        <Input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => {
-                            const copy = [...items]
-                            copy[idx].quantity = parseInt(e.target.value || '0')
-                            setItems(copy)
-                          }}
-                          disabled={!canEdit}
+                        <FormField
+                          control={form.control}
+                          name={`items.${idx}.quantity`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Quantité</FormLabel>
+                              <FormControl>
+                                <Input type="number" min={1} disabled={!canEdit} {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
                       </div>
                       <div className="col-span-2 flex justify-end">
-                        <Button type="button" variant="ghost" disabled={!canEdit} onClick={() => {
-                          const copy = [...items]
-                          if (copy[idx].id) copy[idx]._delete = true
-                          else copy.splice(idx, 1)
-                          setItems(copy)
-                        }}>
+                        <Button type="button" variant="ghost" disabled={!canEdit} onClick={() => update(idx, { ...(fields[idx] as any), _delete: true } as any)}>
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                   ))}
                   {canEdit && (
-                    <Button type="button" variant="outline" onClick={() => setItems([...items, { vignetteValueId: '', quantity: 1 }])}>
+                    <Button type="button" variant="outline" onClick={() => append({ vignetteValueId: vignetteValues[0]?.id || '', quantity: 1, _delete: false } as any)}>
                       <Plus className="h-4 w-4 mr-2" /> Ajouter un article
                     </Button>
                   )}
@@ -303,13 +299,18 @@ export function RecuDetailPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="note">Note</Label>
-                <Textarea
-                  id="note"
-                  {...register('note')}
-                  placeholder="Note optionnelle du reçu"
-                  rows={3}
-                  disabled={!canEdit}
+                <FormField
+                  control={form.control}
+                  name="note"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Note</FormLabel>
+                      <FormControl>
+                        <Textarea rows={3} placeholder="Note optionnelle du reçu" disabled={!canEdit} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
 
@@ -340,6 +341,7 @@ export function RecuDetailPage() {
                 </div>
               </div>
             </form>
+            </Form>
           </CardContent>
         </Card>
         {!isNew && (
