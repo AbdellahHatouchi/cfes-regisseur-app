@@ -34,6 +34,7 @@ declare module '@electron-toolkit/preload' {
       invoke(channel: 'updateRecu', data: any): Promise<any>
       invoke(channel: 'deleteRecu', id: string): Promise<any>
       invoke(channel: 'getRecusTotal', filters?: { year?: number; month?: number }): Promise<any>
+      invoke(channel: 'getRecusTotalsByStatus', filters?: { year?: number; month?: number }): Promise<any>
       invoke(channel: 'acceptRecu', data: { id: string; series: { vignetteValueId: string; seriesStart: string; seriesEnd: string }[] }): Promise<any>
       invoke(channel: 'completeRecu', id: string): Promise<any>
       invoke(channel: 'rejectRecu', id: string): Promise<any>
@@ -45,6 +46,7 @@ declare module '@electron-toolkit/preload' {
       invoke(channel: 'assignQuittanceOfVersement', data: any): Promise<any>
       invoke(channel: 'deleteVersement', id: string): Promise<any>
       invoke(channel: 'getVersementsTotal', filters?: { year?: number; month?: number }): Promise<any>
+      invoke(channel: 'getVersementsTotalsByKind', filters?: { year?: number; month?: number }): Promise<any>
       // Reports
       invoke(channel: 'getMonthlyReport', filters: { year: number; month?: number }): Promise<any>
       invoke(channel: 'getYearlyReport', year: number): Promise<any>

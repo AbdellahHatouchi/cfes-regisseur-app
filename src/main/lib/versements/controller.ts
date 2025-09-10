@@ -352,3 +352,49 @@ export const getVersementsTotal = async (
     return { success: false, message: 'Erreur lors du calcul du total des versements' }
   }
 }
+
+export const getVersementsTotalsByKind = async (
+  year?: number,
+  month?: number
+): Promise<{ success: boolean; data?: { vignette: number; quittance: number; total: number }; message?: string }> => {
+  try {
+    let dateWhere: any = {}
+    if (year) {
+      if (month) {
+        const startDate = new Date(year, month - 1, 1)
+        const endDate = new Date(year, month, 0, 23, 59, 59, 999)
+        dateWhere.dateVersement = { [Op.between]: [startDate, endDate] }
+      } else {
+        const startDate = new Date(year, 0, 1)
+        const endDate = new Date(year, 11, 31, 23, 59, 59, 999)
+        dateWhere.dateVersement = { [Op.between]: [startDate, endDate] }
+      }
+    }
+
+    const items = await VersementItem.findAll({
+      include: [
+        {
+          model: Versement,
+          as: 'versement',
+          attributes: [],
+          where: dateWhere
+        }
+      ],
+      attributes: ['type', 'itemAmount'],
+      raw: true
+    })
+
+    let vignette = 0
+    let quittance = 0
+    for (const it of items as any[]) {
+      const amount = Number(it.itemAmount) || 0
+      if (it.type === 'vignette') vignette += amount
+      else if (it.type === 'quittance') quittance += amount
+    }
+    const total = vignette + quittance
+    return { success: true, data: { vignette: Number(vignette.toFixed(2)), quittance: Number(quittance.toFixed(2)), total: Number(total.toFixed(2)) } }
+  } catch (error) {
+    console.error('Error calculating versements totals by kind:', error)
+    return { success: false, message: 'Erreur lors du calcul des totaux des versements par type' }
+  }
+}

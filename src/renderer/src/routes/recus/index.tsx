@@ -22,6 +22,7 @@ export function RecusPage() {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
   const [totalRecu, setTotalRecu] = useState(0)
   const [totalVerse, setTotalVerse] = useState(0)
+  const [totalsByStatus, setTotalsByStatus] = useState<{ all: number; accepte: number; rejected: number }>({ all: 0, accepte: 0, rejected: 0 })
   const [loading, setLoading] = useState(false)
   const navigate = Route.useNavigate()
 
@@ -65,6 +66,14 @@ export function RecusPage() {
       
       if (recusTotalResponse.success) {
         setTotalRecu(recusTotalResponse.data)
+      }
+
+      const recusTotalsByStatusResponse = await window.electron.ipcRenderer.invoke('getRecusTotalsByStatus', {
+        year: selectedYear,
+        month: selectedMonth
+      })
+      if (recusTotalsByStatusResponse.success) {
+        setTotalsByStatus(recusTotalsByStatusResponse.data)
       }
 
       const versementsTotalResponse = await window.electron.ipcRenderer.invoke('getVersementsTotal', {
@@ -162,7 +171,7 @@ export function RecusPage() {
       />
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Reçu</CardTitle>
@@ -190,6 +199,17 @@ export function RecusPage() {
             <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {balance.toFixed(2)} DH
             </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Répartition Statuts</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="text-sm space-y-1">
+            <div className="flex justify-between"><span>Acceptés</span><span className="font-semibold">{totalsByStatus.accepte.toFixed(2)} DH</span></div>
+            <div className="flex justify-between"><span>Rejetés</span><span className="font-semibold">{totalsByStatus.rejected.toFixed(2)} DH</span></div>
+            <div className="flex justify-between border-t pt-1"><span>Total</span><span className="font-semibold">{totalsByStatus.all.toFixed(2)} DH</span></div>
           </CardContent>
         </Card>
       </div>
