@@ -35,7 +35,6 @@ declare module '@electron-toolkit/preload' {
       invoke(channel: 'deleteRecu', id: string): Promise<any>
       invoke(channel: 'getRecusTotal', filters?: { year?: number; month?: number }): Promise<any>
       invoke(channel: 'acceptRecu', data: { id: string; series: { vignetteValueId: string; seriesStart: string; seriesEnd: string }[] }): Promise<any>
-      invoke(channel: 'completeRecu', id: string): Promise<any>
       invoke(channel: 'rejectRecu', id: string): Promise<any>
       // Versements
       invoke(channel: 'createVersement', data: any): Promise<any>

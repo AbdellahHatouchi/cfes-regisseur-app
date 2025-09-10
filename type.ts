@@ -41,7 +41,7 @@ export interface RecuAttributes {
   dateRecu: Date
   montantTotal: number
   note?: string
-  status: 'demande' | 'accepte' | 'rejected' | 'completed'
+  status: 'demande' | 'accepte' | 'rejected'
   createdAt?: Date
   updatedAt?: Date
 }
@@ -83,8 +83,8 @@ export interface RecuSeriesAttributes {
   id: string
   recuId: string
   vignetteValueId: string
-  seriesStart: string
-  seriesEnd: string
+  seriesStart: number
+  seriesEnd: number
   createdAt?: Date
   updatedAt?: Date
 }
@@ -126,4 +126,11 @@ export type VersementRes = VersementAttributes & {
   items: (VersementItemAttributes & {
     vignetteValue: VignetteValueAttributes
   })[]
+}
+// recu response
+export type RecuRes = RecuAttributes & {
+  items: (RecuItemAttributes & {
+    vignetteValue: VignetteValueAttributes
+  })[]
+  series: RecuSeriesAttributes[]
 }

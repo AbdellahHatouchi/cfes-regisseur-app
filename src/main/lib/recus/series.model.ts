@@ -8,8 +8,8 @@ class RecuSeries extends Model<RecuSeriesAttributes, RecuSeriesCreationAttribute
   public id!: string
   public recuId!: string
   public vignetteValueId!: string
-  public seriesStart!: string
-  public seriesEnd!: string
+  public seriesStart!: number
+  public seriesEnd!: number
   public readonly createdAt!: Date
   public readonly updatedAt!: Date
 }
@@ -32,12 +32,12 @@ RecuSeries.init(
       field: 'vignette_value_id'
     },
     seriesStart: {
-      type: DataTypes.STRING,
+      type: DataTypes.NUMBER,
       allowNull: false,
       field: 'series_start'
     },
     seriesEnd: {
-      type: DataTypes.STRING,
+      type: DataTypes.NUMBER,
       allowNull: false,
       field: 'series_end'
     }

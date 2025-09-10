@@ -24,8 +24,8 @@ export const getNextVersementNumber = async (): Promise<string> => {
       order: [['createdAt', 'DESC']]
     })
     let nextSeq = 1
-    if (last?.numeroVersement) {
-      const match = String(last.numeroVersement).match(/(\d{4})[-_](\d+)/)
+    if (last?.getDataValue('numeroVersement')) {
+      const match = String(last.getDataValue('numeroVersement')).match(/(\d{4})[-_](\d+)/)
       if (match && Number(match[1]) === year) {
         nextSeq = Number(match[2]) + 1
       }

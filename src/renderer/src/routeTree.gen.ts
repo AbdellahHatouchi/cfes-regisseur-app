@@ -22,6 +22,7 @@ import { Route as RecusRecuIdIndexRouteImport } from './routes/recus/$recuId/ind
 import { Route as FiscalAttestationsFiscalATIdIndexRouteImport } from './routes/fiscal-attestations/$fiscalATId/index'
 import { Route as VersementsVersementIdViewIndexRouteImport } from './routes/versements/$versementId/view/index'
 import { Route as UsersUserIdViewIndexRouteImport } from './routes/users/$userId/view/index'
+import { Route as RecusRecuIdViewIndexRouteImport } from './routes/recus/$recuId/view/index'
 import { Route as FiscalAttestationsFiscalATIdViewIndexRouteImport } from './routes/fiscal-attestations/$fiscalATId/view/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -92,6 +93,11 @@ const UsersUserIdViewIndexRoute = UsersUserIdViewIndexRouteImport.update({
   path: '/users/$userId/view/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecusRecuIdViewIndexRoute = RecusRecuIdViewIndexRouteImport.update({
+  id: '/recus/$recuId/view/',
+  path: '/recus/$recuId/view/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FiscalAttestationsFiscalATIdViewIndexRoute =
   FiscalAttestationsFiscalATIdViewIndexRouteImport.update({
     id: '/fiscal-attestations/$fiscalATId/view/',
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/users/$userId': typeof UsersUserIdIndexRoute
   '/versements/$versementId': typeof VersementsVersementIdIndexRoute
   '/fiscal-attestations/$fiscalATId/view': typeof FiscalAttestationsFiscalATIdViewIndexRoute
+  '/recus/$recuId/view': typeof RecusRecuIdViewIndexRoute
   '/users/$userId/view': typeof UsersUserIdViewIndexRoute
   '/versements/$versementId/view': typeof VersementsVersementIdViewIndexRoute
 }
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/users/$userId': typeof UsersUserIdIndexRoute
   '/versements/$versementId': typeof VersementsVersementIdIndexRoute
   '/fiscal-attestations/$fiscalATId/view': typeof FiscalAttestationsFiscalATIdViewIndexRoute
+  '/recus/$recuId/view': typeof RecusRecuIdViewIndexRoute
   '/users/$userId/view': typeof UsersUserIdViewIndexRoute
   '/versements/$versementId/view': typeof VersementsVersementIdViewIndexRoute
 }
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/users/$userId/': typeof UsersUserIdIndexRoute
   '/versements/$versementId/': typeof VersementsVersementIdIndexRoute
   '/fiscal-attestations/$fiscalATId/view/': typeof FiscalAttestationsFiscalATIdViewIndexRoute
+  '/recus/$recuId/view/': typeof RecusRecuIdViewIndexRoute
   '/users/$userId/view/': typeof UsersUserIdViewIndexRoute
   '/versements/$versementId/view/': typeof VersementsVersementIdViewIndexRoute
 }
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/users/$userId'
     | '/versements/$versementId'
     | '/fiscal-attestations/$fiscalATId/view'
+    | '/recus/$recuId/view'
     | '/users/$userId/view'
     | '/versements/$versementId/view'
   fileRoutesByTo: FileRoutesByTo
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/users/$userId'
     | '/versements/$versementId'
     | '/fiscal-attestations/$fiscalATId/view'
+    | '/recus/$recuId/view'
     | '/users/$userId/view'
     | '/versements/$versementId/view'
   id:
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/users/$userId/'
     | '/versements/$versementId/'
     | '/fiscal-attestations/$fiscalATId/view/'
+    | '/recus/$recuId/view/'
     | '/users/$userId/view/'
     | '/versements/$versementId/view/'
   fileRoutesById: FileRoutesById
@@ -212,6 +224,7 @@ export interface RootRouteChildren {
   UsersUserIdIndexRoute: typeof UsersUserIdIndexRoute
   VersementsVersementIdIndexRoute: typeof VersementsVersementIdIndexRoute
   FiscalAttestationsFiscalATIdViewIndexRoute: typeof FiscalAttestationsFiscalATIdViewIndexRoute
+  RecusRecuIdViewIndexRoute: typeof RecusRecuIdViewIndexRoute
   UsersUserIdViewIndexRoute: typeof UsersUserIdViewIndexRoute
   VersementsVersementIdViewIndexRoute: typeof VersementsVersementIdViewIndexRoute
 }
@@ -309,6 +322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsersUserIdViewIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/recus/$recuId/view/': {
+      id: '/recus/$recuId/view/'
+      path: '/recus/$recuId/view'
+      fullPath: '/recus/$recuId/view'
+      preLoaderRoute: typeof RecusRecuIdViewIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/fiscal-attestations/$fiscalATId/view/': {
       id: '/fiscal-attestations/$fiscalATId/view/'
       path: '/fiscal-attestations/$fiscalATId/view'
@@ -334,6 +354,7 @@ const rootRouteChildren: RootRouteChildren = {
   VersementsVersementIdIndexRoute: VersementsVersementIdIndexRoute,
   FiscalAttestationsFiscalATIdViewIndexRoute:
     FiscalAttestationsFiscalATIdViewIndexRoute,
+  RecusRecuIdViewIndexRoute: RecusRecuIdViewIndexRoute,
   UsersUserIdViewIndexRoute: UsersUserIdViewIndexRoute,
   VersementsVersementIdViewIndexRoute: VersementsVersementIdViewIndexRoute,
 }

@@ -91,7 +91,6 @@ export function RecusPage() {
     numeroRecu: recu.numeroRecu,
     dateRecu: format(new Date(recu.dateRecu), 'dd MMMM yyyy', { locale: fr }),
     montantTotal: recu.montantTotal,
-    note: (recu as any).note || '',
     status: (recu as any).status,
     createdAt: format(new Date(recu.createdAt!), 'dd MMMM yyyy', { locale: fr })
   }))
@@ -102,8 +101,8 @@ export function RecusPage() {
     <>
       <div className="flex items-center justify-between">
         <Heading
-          title="Reçus & Versements des Vignettes"
-          description="Gérez les reçus et versements pour votre commune"
+          title="Reçus des Vignettes"
+          description="Gérez les reçus pour votre commune"
         />
         <Button
           onClick={() =>
@@ -119,6 +118,38 @@ export function RecusPage() {
         </Button>
       </div>
       <Separator />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Reçu</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalRecu.toFixed(2)} DH</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Versé</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalVerse.toFixed(2)} DH</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Solde</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {balance.toFixed(2)} DH
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Filters */}
       <div className="flex items-center space-x-4 mb-6">
@@ -160,39 +191,6 @@ export function RecusPage() {
         columns={columns}
         loading={loading}
       />
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Reçu</CardTitle>
-            <Receipt className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalRecu.toFixed(2)} DH</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Versé</CardTitle>
-            <Receipt className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalVerse.toFixed(2)} DH</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Solde</CardTitle>
-            <Receipt className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {balance.toFixed(2)} DH
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </>
   )
 }

@@ -12,7 +12,7 @@ class Recu extends Model<RecuAttributes, RecuCreationAttributes> implements Recu
   public dateRecu!: Date
   public montantTotal!: number
   public note?: string
-  public status!: 'demande' | 'accepte' | 'rejected' | 'completed'
+  public status!: 'demande' | 'accepte' | 'rejected'
 
   // timestamps!
   public readonly createdAt!: Date
@@ -44,7 +44,7 @@ Recu.init(
       allowNull: true
     },
     status: {
-      type: DataTypes.ENUM('demande', 'accepte', 'rejected', 'completed'),
+      type: DataTypes.ENUM('demande', 'accepte', 'rejected'),
       allowNull: false,
       defaultValue: 'demande'
     }

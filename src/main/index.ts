@@ -33,7 +33,6 @@ import {
   updateRecu,
   getRecusTotal,
   acceptRecu,
-  completeRecu,
   rejectRecu
 } from './lib/recus/controller'
 import {
@@ -43,7 +42,6 @@ import {
   getVersements,
   updateVersement,
   getVersementsTotal,
-  getNextVersementNumber,
   assignQuittanceOfVersement
 } from './lib/versements/controller'
 import {
@@ -105,7 +103,7 @@ app.whenReady().then(async () => {
   try {
     await TestConnection()
     await initializeAssociations()
-    await sequelize.sync({ alter: true })
+    await sequelize.sync({})
     try {
       await sequelize.query(`CREATE VIEW IF NOT EXISTS rapport_mensuel AS
         SELECT
@@ -158,7 +156,6 @@ app.whenReady().then(async () => {
   ipcMain.handle('deleteRecu', (_e, id) => deleteRecu(id))
   ipcMain.handle('getRecusTotal', (_e, filters) => getRecusTotal(filters?.year, filters?.month))
   ipcMain.handle('acceptRecu', (_e, data) => acceptRecu(data.id, data.series))
-  ipcMain.handle('completeRecu', (_e, id) => completeRecu(id))
   ipcMain.handle('rejectRecu', (_e, id) => rejectRecu(id))
 
   // Versements

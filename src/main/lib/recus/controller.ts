@@ -5,15 +5,59 @@ import RecuSeries from './series.model'
 import VignetteValue from '../vignette-values/model'
 import { RecuAttributes } from '../../../../type'
 import { sequelize } from '..'
+import { recuFormSchema, SerieSchemaData } from '@shared/schema/recu-schema'
+
+export const getNextRecuNumber = async (): Promise<string> => {
+  try {
+    const year = new Date().getFullYear()
+
+    const last = await Recu.findOne({
+      where: {
+        dateRecu: {
+          [Op.between]: [
+            new Date(year, 0, 1),
+            new Date(year, 11, 31, 23, 59, 59, 999)
+          ]
+        }
+      },
+      order: [['createdAt', 'DESC']]
+    })
+
+    let nextSeq = 1
+
+    if (last?.getDataValue('numeroRecu')) {
+      const match = String(last.getDataValue('numeroRecu')).match(/^REC-(\d{4})-(\d+)$/)
+      if (match && Number(match[1]) === year) {
+        nextSeq = Number(match[2]) + 1
+      }
+    }
+
+    return `REC-${year}-${String(nextSeq).padStart(3, '0')}`
+  } catch (error) {
+    console.error('Error generating next recu number:', error)
+    throw new Error('Erreur lors de la génération du numéro de recu')
+  }
+}
 
 export const createRecu = async (
-  data: Omit<RecuAttributes, 'id' | 'status'> & { items?: Array<{ vignetteValueId: string; quantity: number }> }
+  data: Omit<RecuAttributes, 'id' | 'status'> & {
+    items: Array<{ vignetteValueId: string; quantity: number }>
+  }
 ): Promise<{ success: boolean; data?: any; message?: string }> => {
   const t = await sequelize.transaction()
   try {
-    const hasItems = !!(data.items && data.items.length)
+    const formData = recuFormSchema.parse(data)
+    const nextRecuNum = await getNextRecuNumber()
+    console.log(nextRecuNum);
+    
     const recu = await Recu.create(
-      { ...data, note: (data as any).note ?? (data as any).description, montantTotal: hasItems ? 0 : data.montantTotal, status: 'demande' },
+      {
+        numeroRecu: nextRecuNum,
+        dateRecu: new Date(formData.dateRecu),
+        note: formData.note,
+        montantTotal: 0,
+        status: 'demande'
+      },
       { transaction: t }
     )
 
@@ -26,7 +70,7 @@ export const createRecu = async (
         total += subtotal
         await RecuItem.create(
           {
-            recuId: recu.id,
+            recuId: recu.getDataValue('id'),
             vignetteValueId: item.vignetteValueId,
             quantity: item.quantity,
             subtotalDh: Number(subtotal.toFixed(2))
@@ -38,11 +82,7 @@ export const createRecu = async (
     }
     await t.commit()
 
-    const recuWithItems = await Recu.findByPk(recu.id, { include: [
-      { model: RecuItem, as: 'items', include: [{ model: VignetteValue, as: 'vignetteValue' }] },
-      { model: RecuSeries, as: 'series', include: [{ model: VignetteValue, as: 'vignetteValue' }] }
-    ] })
-    return { success: true, data: recuWithItems?.toJSON() }
+    return { success: true, data: {recuId: recu.getDataValue('id')} }
   } catch (error) {
     await t.rollback()
     console.error('Error creating recu:', error)
@@ -50,10 +90,13 @@ export const createRecu = async (
   }
 }
 
-export const getRecus = async (year?: number, month?: number): Promise<{ success: boolean; data?: RecuAttributes[]; message?: string }> => {
+export const getRecus = async (
+  year?: number,
+  month?: number
+): Promise<{ success: boolean; data?: RecuAttributes[]; message?: string }> => {
   try {
     let whereClause: any = {}
-    
+
     if (year) {
       if (month) {
         // Specific month and year
@@ -76,24 +119,36 @@ export const getRecus = async (year?: number, month?: number): Promise<{ success
       where: whereClause,
       include: [
         { model: RecuItem, as: 'items', include: [{ model: VignetteValue, as: 'vignetteValue' }] },
-        { model: RecuSeries, as: 'series', include: [{ model: VignetteValue, as: 'vignetteValue' }] }
+        {
+          model: RecuSeries,
+          as: 'series',
+          include: [{ model: VignetteValue, as: 'vignetteValue' }]
+        }
       ],
       order: [['dateRecu', 'DESC']]
     })
 
-    return { success: true, data: recus.map(recu => recu.toJSON()) }
+    return { success: true, data: recus.map((recu) => recu.toJSON()) }
   } catch (error) {
     console.error('Error fetching recus:', error)
     return { success: false, message: 'Erreur lors de la récupération des reçus' }
   }
 }
 
-export const getRecuById = async (id: string): Promise<{ success: boolean; data?: any; message?: string }> => {
+export const getRecuById = async (
+  id: string
+): Promise<{ success: boolean; data?: any; message?: string }> => {
   try {
-    const recu = await Recu.findByPk(id, { include: [
-      { model: RecuItem, as: 'items', include: [{ model: VignetteValue, as: 'vignetteValue' }] },
-      { model: RecuSeries, as: 'series', include: [{ model: VignetteValue, as: 'vignetteValue' }] }
-    ] })
+    const recu = await Recu.findByPk(id, {
+      include: [
+        { model: RecuItem, as: 'items', include: [{ model: VignetteValue, as: 'vignetteValue' }] },
+        {
+          model: RecuSeries,
+          as: 'series',
+          include: [{ model: VignetteValue, as: 'vignetteValue' }]
+        }
+      ]
+    })
     if (!recu) {
       return { success: false, message: 'Reçu non trouvé' }
     }
@@ -106,7 +161,9 @@ export const getRecuById = async (id: string): Promise<{ success: boolean; data?
 
 export const updateRecu = async (
   id: string,
-  data: Partial<RecuAttributes> & { items?: Array<{ id?: string; vignetteValueId: string; quantity: number; _delete?: boolean }> }
+  data: Partial<RecuAttributes> & {
+    items?: Array<{ id?: string; vignetteValueId: string; quantity: number; _delete?: boolean }>
+  }
 ): Promise<{ success: boolean; data?: any; message?: string }> => {
   const t = await sequelize.transaction()
   try {
@@ -117,11 +174,17 @@ export const updateRecu = async (
     }
     if (recu.getDataValue('status') !== 'demande') {
       await t.rollback()
-      return { success: false, message: 'Impossible de modifier le reçu après acceptation ou rejet.' }
+      return {
+        success: false,
+        message: 'Impossible de modifier le reçu après acceptation ou rejet.'
+      }
     }
 
     const { items, ...recuFields } = data
-    await recu.update({ ...recuFields, note: (recuFields as any).note ?? (recuFields as any).description }, { transaction: t })
+    await recu.update(
+      { ...recuFields, note: (recuFields as any).note ?? (recuFields as any).description },
+      { transaction: t }
+    )
 
     if (items) {
       // reset total and recalc based on items
@@ -137,7 +200,11 @@ export const updateRecu = async (
           if (!vv) throw new Error('Invalid vignette value')
           const subtotal = Number(vv.get('valueDh')) * item.quantity
           await RecuItem.update(
-            { vignetteValueId: item.vignetteValueId, quantity: item.quantity, subtotalDh: Number(subtotal.toFixed(2)) },
+            {
+              vignetteValueId: item.vignetteValueId,
+              quantity: item.quantity,
+              subtotalDh: Number(subtotal.toFixed(2))
+            },
             { where: { id: item.id }, transaction: t }
           )
           total += subtotal
@@ -148,7 +215,12 @@ export const updateRecu = async (
           const subtotal = Number(vv.get('valueDh')) * item.quantity
           total += subtotal
           await RecuItem.create(
-            { recuId: recu.id, vignetteValueId: item.vignetteValueId, quantity: item.quantity, subtotalDh: Number(subtotal.toFixed(2)) },
+            {
+              recuId: recu.id,
+              vignetteValueId: item.vignetteValueId,
+              quantity: item.quantity,
+              subtotalDh: Number(subtotal.toFixed(2))
+            },
             { transaction: t }
           )
         }
@@ -157,10 +229,16 @@ export const updateRecu = async (
     }
 
     await t.commit()
-    const recuWithItems = await Recu.findByPk(recu.id, { include: [
-      { model: RecuItem, as: 'items', include: [{ model: VignetteValue, as: 'vignetteValue' }] },
-      { model: RecuSeries, as: 'series', include: [{ model: VignetteValue, as: 'vignetteValue' }] }
-    ] })
+    const recuWithItems = await Recu.findByPk(recu.id, {
+      include: [
+        { model: RecuItem, as: 'items', include: [{ model: VignetteValue, as: 'vignetteValue' }] },
+        {
+          model: RecuSeries,
+          as: 'series',
+          include: [{ model: VignetteValue, as: 'vignetteValue' }]
+        }
+      ]
+    })
     return { success: true, data: recuWithItems?.toJSON() }
   } catch (error) {
     await t.rollback()
@@ -187,10 +265,13 @@ export const deleteRecu = async (id: string): Promise<{ success: boolean; messag
   }
 }
 
-export const getRecusTotal = async (year?: number, month?: number): Promise<{ success: boolean; data?: number; message?: string }> => {
+export const getRecusTotal = async (
+  year?: number,
+  month?: number
+): Promise<{ success: boolean; data?: number; message?: string }> => {
   try {
     let whereClause: any = {}
-    
+
     if (year) {
       if (month) {
         // Specific month and year
@@ -219,7 +300,7 @@ export const getRecusTotal = async (year?: number, month?: number): Promise<{ su
 
 export const acceptRecu = async (
   id: string,
-  series: Array<{ vignetteValueId: string; seriesStart: string; seriesEnd: string }>
+  series: SerieSchemaData[]
 ): Promise<{ success: boolean; data?: any; message?: string }> => {
   const t = await sequelize.transaction()
   try {
@@ -230,12 +311,20 @@ export const acceptRecu = async (
     }
     if (recu.getDataValue('status') !== 'demande') {
       await t.rollback()
-      return { success: false, message: 'Le reçu ne peut être accepté que depuis l’état "demande".' }
+      return {
+        success: false,
+        message: 'Le reçu ne peut être accepté que depuis l’état "demande".'
+      }
     }
     // create series entries
     for (const s of series) {
       await RecuSeries.create(
-        { recuId: id, vignetteValueId: s.vignetteValueId, seriesStart: s.seriesStart, seriesEnd: s.seriesEnd },
+        {
+          recuId: id,
+          vignetteValueId: s.vignetteValueId,
+          seriesStart: s.startSerieNum,
+          seriesEnd: s.endSerieNum
+        },
         { transaction: t }
       )
     }
@@ -249,22 +338,26 @@ export const acceptRecu = async (
   }
 }
 
-export const completeRecu = async (id: string): Promise<{ success: boolean; data?: any; message?: string }> => {
-  try {
-    const recu = await Recu.findByPk(id)
-    if (!recu) return { success: false, message: 'Reçu non trouvé' }
-    if (recu.getDataValue('status') !== 'accepte') {
-      return { success: false, message: 'Le reçu doit être en état "accepte" pour être complété.' }
-    }
-    await recu.update({ status: 'completed' })
-    return { success: true, data: { id } }
-  } catch (error) {
-    console.error('Error completing recu:', error)
-    return { success: false, message: 'Erreur lors de la complétion du reçu' }
-  }
-}
+// export const completeRecu = async (
+//   id: string
+// ): Promise<{ success: boolean; data?: any; message?: string }> => {
+//   try {
+//     const recu = await Recu.findByPk(id)
+//     if (!recu) return { success: false, message: 'Reçu non trouvé' }
+//     if (recu.getDataValue('status') !== 'accepte') {
+//       return { success: false, message: 'Le reçu doit être en état "accepte" pour être complété.' }
+//     }
+//     await recu.update({ status: 'completed' })
+//     return { success: true, data: { id } }
+//   } catch (error) {
+//     console.error('Error completing recu:', error)
+//     return { success: false, message: 'Erreur lors de la complétion du reçu' }
+//   }
+// }
 
-export const rejectRecu = async (id: string): Promise<{ success: boolean; data?: any; message?: string }> => {
+export const rejectRecu = async (
+  id: string
+): Promise<{ success: boolean; data?: any; message?: string }> => {
   try {
     const recu = await Recu.findByPk(id)
     if (!recu) return { success: false, message: 'Reçu non trouvé' }
