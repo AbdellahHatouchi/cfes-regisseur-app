@@ -11,6 +11,7 @@ import { VersementAttributes } from 'type'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { months, years } from '@/lib/utils'
 
 export const Route = createFileRoute('/versements/')({
   component: VersementsPage
@@ -20,27 +21,9 @@ export function VersementsPage() {
   const [versements, setVersements] = useState<(VersementAttributes & { createdAt: string })[]>([])
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
-  const [totalRecu, setTotalRecu] = useState(0)
-  const [totalVerse, setTotalVerse] = useState(0)
+  const [totalsByKind, setTotalsByKind] = useState<{ vignette: number; quittance: number; total: number }>({ vignette: 0, quittance: 0, total: 0 })
   const [loading, setLoading] = useState(false)
   const navigate = Route.useNavigate()
-
-  const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i)
-  const months = [
-    { value: null, label: 'Tous les mois' },
-    { value: 1, label: 'Janvier' },
-    { value: 2, label: 'Février' },
-    { value: 3, label: 'Mars' },
-    { value: 4, label: 'Avril' },
-    { value: 5, label: 'Mai' },
-    { value: 6, label: 'Juin' },
-    { value: 7, label: 'Juillet' },
-    { value: 8, label: 'Août' },
-    { value: 9, label: 'Septembre' },
-    { value: 10, label: 'Octobre' },
-    { value: 11, label: 'Novembre' },
-    { value: 12, label: 'Décembre' }
-  ]
 
   const fetchData = async () => {
     setLoading(true)
@@ -57,23 +40,12 @@ export function VersementsPage() {
         console.error('Error fetching versements:', versementsResponse.message)
       }
 
-      // Fetch totals
-      const recusTotalResponse = await window.electron.ipcRenderer.invoke('getRecusTotal', {
+      const versementsByKindResponse = await window.electron.ipcRenderer.invoke('getVersementsTotalsByKind', {
         year: selectedYear,
         month: selectedMonth
       })
-      
-      if (recusTotalResponse.success) {
-        setTotalRecu(recusTotalResponse.data)
-      }
-
-      const versementsTotalResponse = await window.electron.ipcRenderer.invoke('getVersementsTotal', {
-        year: selectedYear,
-        month: selectedMonth
-      })
-      
-      if (versementsTotalResponse.success) {
-        setTotalVerse(versementsTotalResponse.data)
+      if (versementsByKindResponse.success) {
+        setTotalsByKind(versementsByKindResponse.data)
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -93,11 +65,8 @@ export function VersementsPage() {
     type: versement.type,
     montantTotal: versement.montantTotal,
     numeroQuittance: versement.numeroQuittance || '',
-    description: versement.description || '',
     createdAt: format(new Date(versement.createdAt!), 'dd MMMM yyyy', { locale: fr })
   }))
-
-  const balance = totalRecu - totalVerse
 
   return (
     <>
@@ -120,6 +89,38 @@ export function VersementsPage() {
         </Button>
       </div>
       <Separator />
+
+      {/* Summary Cards */}
+      {/* By kind */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Versements Vignettes</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalsByKind.vignette.toFixed(2)} DH</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Versements Quittances</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalsByKind.quittance.toFixed(2)} DH</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Versements Totaux</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{totalsByKind.total.toFixed(2)} DH</div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Filters */}
       <div className="flex items-center space-x-4 mb-6">
@@ -161,39 +162,6 @@ export function VersementsPage() {
         columns={columns}
         loading={loading}
       />
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Reçu</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalRecu.toFixed(2)} DH</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Versé</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalVerse.toFixed(2)} DH</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Solde</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {balance.toFixed(2)} DH
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </>
   )
 }

@@ -1,6 +1,6 @@
 {
   "name": "cfes-regisseur-app",
-  "version": "1.0.0",
+  "version": "2.0.0.beta",
   "description": "An Electron application with React and TypeScript",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -46,6 +46,7 @@
     "electron-updater": "^6.1.7",
     "lucide-react": "^0.469.0",
     "next-themes": "^0.4.4",
+    "react-day-picker": "^9.9.0",
     "react-hook-form": "^7.54.2",
     "react-image": "^4.1.0",
     "react-pdf-tailwind": "^2.3.0",
@@ -79,7 +80,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.5.2",
+    "typescript": "^5.9.2",
     "vite": "^5.3.1"
   }
 }

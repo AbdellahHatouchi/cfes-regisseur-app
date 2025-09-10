@@ -11,7 +11,8 @@ class Recu extends Model<RecuAttributes, RecuCreationAttributes> implements Recu
   public numeroRecu!: string
   public dateRecu!: Date
   public montantTotal!: number
-  public description?: string
+  public note?: string
+  public status!: 'demande' | 'accepte' | 'rejected'
 
   // timestamps!
   public readonly createdAt!: Date
@@ -31,21 +32,27 @@ Recu.init(
       unique: true
     },
     dateRecu: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
       allowNull: false
     },
     montantTotal: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
     },
-    description: {
+    note: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    status: {
+      type: DataTypes.ENUM('demande', 'accepte', 'rejected'),
+      allowNull: false,
+      defaultValue: 'demande'
     }
   },
   {
     sequelize,
     modelName: 'Recu',
+    tableName: 'recu',
     indexes: [{ unique: true, fields: ['numeroRecu'] }]
   }
 )

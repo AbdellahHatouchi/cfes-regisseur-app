@@ -40,7 +40,8 @@ export interface RecuAttributes {
   numeroRecu: string
   dateRecu: Date
   montantTotal: number
-  description?: string
+  note?: string
+  status: 'demande' | 'accepte' | 'rejected'
   createdAt?: Date
   updatedAt?: Date
 }
@@ -53,7 +54,51 @@ export interface VersementAttributes {
   type: 'Vignette' | 'Quittance' | 'Mixte'
   montantTotal: number
   numeroQuittance?: string
+  note?: string
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+// New schema types
+export interface VignetteValueAttributes {
+  id: string
+  valueDh: number
+  carnetSize: number
   description?: string
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface RecuItemAttributes {
+  id: string
+  recuId: string
+  vignetteValueId: string
+  quantity: number
+  subtotalDh: number
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface RecuSeriesAttributes {
+  id: string
+  recuId: string
+  vignetteValueId: string
+  seriesStart: number
+  seriesEnd: number
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export type VersementItemType = 'vignette' | 'quittance'
+
+export interface VersementItemAttributes {
+  id: string
+  versementId: string
+  type: VersementItemType
+  vignetteValueId?: string | null
+  vignetteQuantity?: number | null
+  quittanceNum?: string | null
+  itemAmount: number
   createdAt?: Date
   updatedAt?: Date
 }
@@ -74,4 +119,18 @@ export interface YearlyReportAttributes {
   totalRecu: number
   totalVerse: number
   balance: number
+}
+
+// versement response
+export type VersementRes = VersementAttributes & {
+  items: (VersementItemAttributes & {
+    vignetteValue: VignetteValueAttributes
+  })[]
+}
+// recu response
+export type RecuRes = RecuAttributes & {
+  items: (RecuItemAttributes & {
+    vignetteValue: VignetteValueAttributes
+  })[]
+  series: RecuSeriesAttributes[]
 }

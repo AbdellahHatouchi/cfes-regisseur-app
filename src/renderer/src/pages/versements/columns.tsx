@@ -12,7 +12,6 @@ export type VersementTableItem = {
   type: 'Vignette' | 'Quittance' | 'Mixte'
   montantTotal: number
   numeroQuittance: string
-  description: string
   createdAt: string
 }
 
@@ -77,13 +76,6 @@ export const columns: ColumnDef<VersementTableItem>[] = [
     }
   },
   {
-    accessorKey: 'description',
-    header: 'Description',
-    cell: ({ row }) => {
-      return <div className="max-w-[200px] truncate">{row.getValue('description')}</div>
-    }
-  },
-  {
     id: 'actions',
     cell: ({ row }) => {
       const versement = row.original
@@ -102,7 +94,7 @@ export const columns: ColumnDef<VersementTableItem>[] = [
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => navigate({
-                to: '/versements/$versementId',
+                to: '/versements/$versementId/view',
                 params: { versementId: versement.id }
               })}
             >
@@ -110,6 +102,7 @@ export const columns: ColumnDef<VersementTableItem>[] = [
               Voir
             </DropdownMenuItem>
             <DropdownMenuItem
+              disabled={!!versement.numeroQuittance}
               onClick={() => navigate({
                 to: '/versements/$versementId',
                 params: { versementId: versement.id }
@@ -119,6 +112,7 @@ export const columns: ColumnDef<VersementTableItem>[] = [
               Modifier
             </DropdownMenuItem>
             <DropdownMenuItem
+              disabled={!!versement.numeroQuittance}
               onClick={() => {
                 if (confirm('Êtes-vous sûr de vouloir supprimer ce versement ?')) {
                   // Handle delete
