@@ -56,9 +56,9 @@ export const columns: ColumnDef<RecuTableItem>[] = [
         status === 'demande'
           ? 'text-yellow-600'
           : status === 'accepte'
-            ? 'text-blue-600'
+            ? 'text-green-600'
             : status === 'completed'
-              ? 'text-green-600'
+              ? 'text-blue-600'
               : 'text-red-600'
       const label =
         status === 'demande'

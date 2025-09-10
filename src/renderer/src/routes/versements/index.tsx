@@ -21,8 +21,7 @@ export function VersementsPage() {
   const [versements, setVersements] = useState<(VersementAttributes & { createdAt: string })[]>([])
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
-  const [totalRecu, setTotalRecu] = useState(0)
-  const [totalVerse, setTotalVerse] = useState(0)
+  const [totalsByKind, setTotalsByKind] = useState<{ vignette: number; quittance: number; total: number }>({ vignette: 0, quittance: 0, total: 0 })
   const [loading, setLoading] = useState(false)
   const navigate = Route.useNavigate()
 
@@ -41,23 +40,12 @@ export function VersementsPage() {
         console.error('Error fetching versements:', versementsResponse.message)
       }
 
-      // Fetch totals
-      const recusTotalResponse = await window.electron.ipcRenderer.invoke('getRecusTotal', {
+      const versementsByKindResponse = await window.electron.ipcRenderer.invoke('getVersementsTotalsByKind', {
         year: selectedYear,
         month: selectedMonth
       })
-      
-      if (recusTotalResponse.success) {
-        setTotalRecu(recusTotalResponse.data)
-      }
-
-      const versementsTotalResponse = await window.electron.ipcRenderer.invoke('getVersementsTotal', {
-        year: selectedYear,
-        month: selectedMonth
-      })
-      
-      if (versementsTotalResponse.success) {
-        setTotalVerse(versementsTotalResponse.data)
+      if (versementsByKindResponse.success) {
+        setTotalsByKind(versementsByKindResponse.data)
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -79,8 +67,6 @@ export function VersementsPage() {
     numeroQuittance: versement.numeroQuittance || '',
     createdAt: format(new Date(versement.createdAt!), 'dd MMMM yyyy', { locale: fr })
   }))
-
-  const balance = totalRecu - totalVerse
 
   return (
     <>
@@ -105,34 +91,33 @@ export function VersementsPage() {
       <Separator />
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+      {/* By kind */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Reçu</CardTitle>
+            <CardTitle className="text-sm font-medium">Versements Vignettes</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalRecu.toFixed(2)} DH</div>
+            <div className="text-2xl font-bold">{totalsByKind.vignette.toFixed(2)} DH</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Versé</CardTitle>
+            <CardTitle className="text-sm font-medium">Versements Quittances</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalVerse.toFixed(2)} DH</div>
+            <div className="text-2xl font-bold">{totalsByKind.quittance.toFixed(2)} DH</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Solde</CardTitle>
+            <CardTitle className="text-sm font-medium">Versements Totaux</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {balance.toFixed(2)} DH
-            </div>
+            <div className="text-2xl font-bold text-green-600">{totalsByKind.total.toFixed(2)} DH</div>
           </CardContent>
         </Card>
       </div>

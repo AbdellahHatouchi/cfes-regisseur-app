@@ -298,6 +298,34 @@ export const getRecusTotal = async (
   }
 }
 
+export const getRecusTotalsByStatus = async (
+  year?: number,
+  month?: number
+): Promise<{ success: boolean; data?: { all: number; accepte: number; rejected: number }; message?: string }> => {
+  try {
+    let whereClause: any = {}
+    if (year) {
+      if (month) {
+        const startDate = new Date(year, month - 1, 1)
+        const endDate = new Date(year, month, 0, 23, 59, 59, 999)
+        whereClause.dateRecu = { [Op.between]: [startDate, endDate] }
+      } else {
+        const startDate = new Date(year, 0, 1)
+        const endDate = new Date(year, 11, 31, 23, 59, 59, 999)
+        whereClause.dateRecu = { [Op.between]: [startDate, endDate] }
+      }
+    }
+
+    const all = Number((await Recu.sum('montantTotal', { where: whereClause })) || 0)
+    const accepte = Number((await Recu.sum('montantTotal', { where: { ...whereClause, status: 'accepte' } })) || 0)
+    const rejected = Number((await Recu.sum('montantTotal', { where: { ...whereClause, status: 'rejected' } })) || 0)
+    return { success: true, data: { all, accepte, rejected } }
+  } catch (error) {
+    console.error('Error calculating recus totals by status:', error)
+    return { success: false, message: 'Erreur lors du calcul des totaux des reçus par statut' }
+  }
+}
+
 export const acceptRecu = async (
   id: string,
   series: SerieSchemaData[]

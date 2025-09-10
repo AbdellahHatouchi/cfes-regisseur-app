@@ -32,6 +32,7 @@ import {
   getRecus,
   updateRecu,
   getRecusTotal,
+  getRecusTotalsByStatus,
   acceptRecu,
   rejectRecu
 } from './lib/recus/controller'
@@ -42,6 +43,7 @@ import {
   getVersements,
   updateVersement,
   getVersementsTotal,
+  getVersementsTotalsByKind,
   assignQuittanceOfVersement
 } from './lib/versements/controller'
 import {
@@ -155,6 +157,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('updateRecu', (_e, data) => updateRecu(data.id, data))
   ipcMain.handle('deleteRecu', (_e, id) => deleteRecu(id))
   ipcMain.handle('getRecusTotal', (_e, filters) => getRecusTotal(filters?.year, filters?.month))
+  ipcMain.handle('getRecusTotalsByStatus', (_e, filters) => getRecusTotalsByStatus(filters?.year, filters?.month))
   ipcMain.handle('acceptRecu', (_e, data) => acceptRecu(data.id, data.series))
   ipcMain.handle('rejectRecu', (_e, id) => rejectRecu(id))
 
@@ -166,6 +169,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('assignQuittanceOfVersement', (_e, data) => assignQuittanceOfVersement(data.id, data))
   ipcMain.handle('deleteVersement', (_e, id) => deleteVersement(id))
   ipcMain.handle('getVersementsTotal', (_e, filters) => getVersementsTotal(filters?.year, filters?.month))
+  ipcMain.handle('getVersementsTotalsByKind', (_e, filters) => getVersementsTotalsByKind(filters?.year, filters?.month))
 
   // Reports
   ipcMain.handle('getMonthlyReport', (_e, filters) => getMonthlyReport(filters.year, filters?.month))
