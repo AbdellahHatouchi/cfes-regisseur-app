@@ -16,15 +16,27 @@ const fiscalAttestationSchema = z.object({
 // Generate attestation number
 const generateAttestationNumber = async (): Promise<string> => {
   const currentYear = new Date().getFullYear()
+
   const lastAttestation = await FiscalAttestation.findOne({
     raw: true,
     order: [['createdAt', 'DESC']]
   })
-  const lastIndex = lastAttestation
-    ? parseInt(lastAttestation.attestationNumber.split('/')[0], 10)
-    : 0
-  const newIndex = (lastIndex + 1).toString().padStart(3, '0')
-  return `${newIndex}/${currentYear}`
+
+  let newIndex = 1
+
+  if (lastAttestation) {
+    const [lastIndexStr, lastYearStr] = lastAttestation.attestationNumber.split('/')
+
+    const lastYear = parseInt(lastYearStr, 10)
+    const lastIndex = parseInt(lastIndexStr, 10)
+
+    // If same year → increment, else restart from 1
+    if (lastYear === currentYear) {
+      newIndex = lastIndex + 1
+    }
+  }
+
+  return `${newIndex.toString().padStart(3, '0')}/${currentYear}`
 }
 
 // Unified response structure

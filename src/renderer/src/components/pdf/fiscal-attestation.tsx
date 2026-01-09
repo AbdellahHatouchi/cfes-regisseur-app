@@ -151,7 +151,9 @@ const FiscalAttestationPDF: React.FC<FiscalAttestationPDFProps> = ({ fiscalAttes
 
         {/* attesatation Details Section */}
         <View style={tw('text-base capitalize px-6 pl-14 my-5')}>
-          <Text style={tw('mb-4')}>{`JE SOUSIGNE PRESIDENT DE LA COMMUNE DE FERKLA ESSOUFLA`}</Text>
+          <Text
+            style={tw('mb-4 ms-4')}
+          >{`JE SOUSIGNE PRESIDENT DE LA COMMUNE DE FERKLA ESSOUFLA`}</Text>
           <Text style={tw('mb-4')}>
             {`ATTESTE QUE :`} <Text style={tw('font-alexBold text-primary')}>{name}</Text>
           </Text>
@@ -191,17 +193,17 @@ const FiscalAttestationPDF: React.FC<FiscalAttestationPDFProps> = ({ fiscalAttes
               {format(new Date(createdAt), 'dd/MM/yyyy', { locale: fr })}
             </Text>
           </Text>
-        </View>
-
-        {/* Footer Section */}
-        <View style={tw('p-6 uppercase')}>
-          {/* President Section */}
-          <View style={tw('flex flex-row mb-24 justify-center items-center')}>
-            <View style={tw('text-sm text-center')}>
-              <Text style={tw('mt-4 font-alexBold')}>Le Président</Text>
+          <View style={tw('p-6 uppercase')}>
+            {/* President Section */}
+            <View style={tw('flex flex-row mb-24 justify-center items-center')}>
+              <View style={tw('text-sm text-center')}>
+                <Text style={tw('mt-4 font-alexBold')}>Le Président</Text>
+              </View>
             </View>
           </View>
         </View>
+
+        {/* Footer Section */}
         {/* Footer contact */}
         <View style={tw('border p-2 rounded flex flex-row justify-around mt-auto items-center ')}>
           <Text style={{ fontFamily: 'Alexandria', fontSize: 8, fontWeight: 'bold' }}>
