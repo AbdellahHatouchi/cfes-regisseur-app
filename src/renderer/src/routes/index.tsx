@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Users, FileText } from 'lucide-react'
+import { Users, FileText, TicketPercent } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({
@@ -18,6 +18,13 @@ export function HomePage() {
       icon: FileText,
       path: '/fiscal-attestations',
       color: 'bg-blue-500'
+    },
+    {
+      title: 'Valeurs de Vignette',
+      description: 'Gérez les dénominations et tailles des carnets',
+      icon: TicketPercent,
+      path: '/vignette-values',
+      color: 'bg-purple-500'
     },
     {
       title: 'Utilisateurs',

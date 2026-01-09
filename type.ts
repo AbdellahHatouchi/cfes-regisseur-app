@@ -33,3 +33,104 @@ export interface QuittanceAttributes {
   createdAt?: Date
   updatedAt?: Date
 }
+
+// Define the attributes for the Recu model
+export interface RecuAttributes {
+  id: string
+  numeroRecu: string
+  dateRecu: Date
+  montantTotal: number
+  note?: string
+  status: 'demande' | 'accepte' | 'rejected'
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+// Define the attributes for the Versement model
+export interface VersementAttributes {
+  id: string
+  numeroVersement: string
+  dateVersement: Date
+  type: 'Vignette' | 'Quittance' | 'Mixte'
+  montantTotal: number
+  numeroQuittance?: string
+  note?: string
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+// New schema types
+export interface VignetteValueAttributes {
+  id: string
+  valueDh: number
+  carnetSize: number
+  description?: string
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface RecuItemAttributes {
+  id: string
+  recuId: string
+  vignetteValueId: string
+  quantity: number
+  subtotalDh: number
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface RecuSeriesAttributes {
+  id: string
+  recuId: string
+  vignetteValueId: string
+  seriesStart: number
+  seriesEnd: number
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export type VersementItemType = 'vignette' | 'quittance'
+
+export interface VersementItemAttributes {
+  id: string
+  versementId: string
+  type: VersementItemType
+  vignetteValueId?: string | null
+  vignetteQuantity?: number | null
+  quittanceNum?: string | null
+  itemAmount: number
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+// Define the attributes for the monthly report
+export interface MonthlyReportAttributes {
+  month: number
+  year: number
+  totalRecu: number
+  totalVerse: number
+  balance: number
+}
+
+// Define the attributes for the yearly report
+export interface YearlyReportAttributes {
+  year: number
+  months: MonthlyReportAttributes[]
+  totalRecu: number
+  totalVerse: number
+  balance: number
+}
+
+// versement response
+export type VersementRes = VersementAttributes & {
+  items: (VersementItemAttributes & {
+    vignetteValue: VignetteValueAttributes
+  })[]
+}
+// recu response
+export type RecuRes = RecuAttributes & {
+  items: (RecuItemAttributes & {
+    vignetteValue: VignetteValueAttributes
+  })[]
+  series: RecuSeriesAttributes[]
+}

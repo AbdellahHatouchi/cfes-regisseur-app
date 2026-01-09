@@ -1,7 +1,7 @@
 import { Logo } from './logo'
 import { ThemeToggle } from './theme-toggle'
 import { Button } from './ui/button'
-import { Users, FileText, Home } from 'lucide-react'
+import { Users, FileText, Home, Receipt, CreditCard, BarChart3 } from 'lucide-react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
 
 export const Navbar = () => {
@@ -40,6 +40,30 @@ export const Navbar = () => {
           >
             <Users className="h-4 w-4" />
             <span>Utilisateurs</span>
+          </Button>
+          <Button
+            variant={isActive('/recus') ? 'default' : 'ghost'}
+            onClick={() => navigate({ to: '/recus' })}
+            className="flex items-center space-x-2"
+          >
+            <Receipt className="h-4 w-4" />
+            <span>Reçus</span>
+          </Button>
+          <Button
+            variant={isActive('/versements') ? 'default' : 'ghost'}
+            onClick={() => navigate({ to: '/versements' })}
+            className="flex items-center space-x-2"
+          >
+            <CreditCard className="h-4 w-4" />
+            <span>Versements</span>
+          </Button>
+          <Button
+            variant={isActive('/reports') ? 'default' : 'ghost'}
+            onClick={() => navigate({ to: '/reports' })}
+            className="flex items-center space-x-2"
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span>Rapports</span>
           </Button>
         </div>
         <div className="ml-auto flex items-center space-x-2">

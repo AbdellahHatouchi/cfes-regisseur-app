@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { sequelize, TestConnection } from './lib'
+import { sequelize, TestConnection, initializeAssociations } from './lib'
 import {
   createFiscalAttestation,
   deleteFiscalAttestation,
@@ -25,6 +25,32 @@ import {
   getQuittancesTotalByUser,
   updateQuittanceStatus
 } from './lib/quittance/controller'
+import {
+  createRecu,
+  deleteRecu,
+  getRecuById,
+  getRecus,
+  updateRecu,
+  getRecusTotal,
+  getRecusTotalsByStatus,
+  acceptRecu,
+  rejectRecu
+} from './lib/recus/controller'
+import {
+  createVersement,
+  deleteVersement,
+  getVersementById,
+  getVersements,
+  updateVersement,
+  getVersementsTotal,
+  getVersementsTotalsByKind,
+  assignQuittanceOfVersement
+} from './lib/versements/controller'
+import {
+  getMonthlyReport,
+  getYearlyReport
+} from './lib/reports/controller'
+import { createVignetteValue, listVignetteValues, updateVignetteValue, deleteVignetteValue } from './lib/vignette-values/controller'
 
 function createWindow(): void {
   // Create the browser window.
@@ -78,7 +104,23 @@ app.whenReady().then(async () => {
 
   try {
     await TestConnection()
-    await sequelize.sync()
+    await initializeAssociations()
+    await sequelize.sync({})
+    try {
+      await sequelize.query(`CREATE VIEW IF NOT EXISTS rapport_mensuel AS
+        SELECT
+          CAST(STRFTIME('%Y', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER) AS year,
+          CAST(STRFTIME('%m', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER) AS month,
+          IFNULL((SELECT SUM(montantTotal) FROM recu r2 WHERE CAST(STRFTIME('%Y', r2.dateRecu) AS INTEGER) = CAST(STRFTIME('%Y', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER) AND CAST(STRFTIME('%m', r2.dateRecu) AS INTEGER) = CAST(STRFTIME('%m', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER)), 0) AS total_recu,
+          IFNULL((SELECT SUM(montantTotal) FROM versement v2 WHERE CAST(STRFTIME('%Y', v2.dateVersement) AS INTEGER) = CAST(STRFTIME('%Y', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER) AND CAST(STRFTIME('%m', v2.dateVersement) AS INTEGER) = CAST(STRFTIME('%m', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER)), 0) AS total_verse,
+          (IFNULL((SELECT SUM(montantTotal) FROM recu r2 WHERE CAST(STRFTIME('%Y', r2.dateRecu) AS INTEGER) = CAST(STRFTIME('%Y', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER) AND CAST(STRFTIME('%m', r2.dateRecu) AS INTEGER) = CAST(STRFTIME('%m', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER)), 0) -
+           IFNULL((SELECT SUM(montantTotal) FROM versement v2 WHERE CAST(STRFTIME('%Y', v2.dateVersement) AS INTEGER) = CAST(STRFTIME('%Y', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER) AND CAST(STRFTIME('%m', v2.dateVersement) AS INTEGER) = CAST(STRFTIME('%m', COALESCE(r.dateRecu, v.dateVersement)) AS INTEGER)), 0)) AS balance
+        FROM recu r
+        FULL OUTER JOIN versement v ON CAST(STRFTIME('%Y-%m', r.dateRecu) AS TEXT) = CAST(STRFTIME('%Y-%m', v.dateVersement) AS TEXT);
+      `)
+    } catch (e) {
+      console.warn('rapport_mensuel view creation skipped or failed (SQLite may not support FULL OUTER JOIN). Falling back to controller aggregation.')
+    }
     console.log('Connection established successfully')
   } catch (error) {
     console.error('Failed to initialize database:', error)
@@ -107,6 +149,37 @@ app.whenReady().then(async () => {
   ipcMain.handle('getQuittancesTotals', getQuittancesTotals)
   ipcMain.handle('getQuittancesTotalByUser', (_e, userId) => getQuittancesTotalByUser(userId))
   ipcMain.handle('updateQuittanceStatus', (_e, data) => updateQuittanceStatus(data.id, data.status))
+
+  // Recus
+  ipcMain.handle('createRecu', (_e, data) => createRecu(data))
+  ipcMain.handle('getRecus', (_e, filters) => getRecus(filters?.year, filters?.month))
+  ipcMain.handle('getRecuById', (_e, id) => getRecuById(id))
+  ipcMain.handle('updateRecu', (_e, data) => updateRecu(data.id, data))
+  ipcMain.handle('deleteRecu', (_e, id) => deleteRecu(id))
+  ipcMain.handle('getRecusTotal', (_e, filters) => getRecusTotal(filters?.year, filters?.month))
+  ipcMain.handle('getRecusTotalsByStatus', (_e, filters) => getRecusTotalsByStatus(filters?.year, filters?.month))
+  ipcMain.handle('acceptRecu', (_e, data) => acceptRecu(data.id, data.series))
+  ipcMain.handle('rejectRecu', (_e, id) => rejectRecu(id))
+
+  // Versements
+  ipcMain.handle('createVersement', (_e, data) => createVersement(data))
+  ipcMain.handle('getVersements', (_e, filters) => getVersements(filters?.year, filters?.month))
+  ipcMain.handle('getVersementById', (_e, id) => getVersementById(id))
+  ipcMain.handle('updateVersement', (_e, data) => updateVersement(data.id, data))
+  ipcMain.handle('assignQuittanceOfVersement', (_e, data) => assignQuittanceOfVersement(data.id, data))
+  ipcMain.handle('deleteVersement', (_e, id) => deleteVersement(id))
+  ipcMain.handle('getVersementsTotal', (_e, filters) => getVersementsTotal(filters?.year, filters?.month))
+  ipcMain.handle('getVersementsTotalsByKind', (_e, filters) => getVersementsTotalsByKind(filters?.year, filters?.month))
+
+  // Reports
+  ipcMain.handle('getMonthlyReport', (_e, filters) => getMonthlyReport(filters.year, filters?.month))
+  ipcMain.handle('getYearlyReport', (_e, year) => getYearlyReport(year))
+
+  // Vignette Values
+  ipcMain.handle('listVignetteValues', () => listVignetteValues())
+  ipcMain.handle('createVignetteValue', (_e, data) => createVignetteValue(data))
+  ipcMain.handle('updateVignetteValue', (_e, data) => updateVignetteValue(data.id, data))
+  ipcMain.handle('deleteVignetteValue', (_e, id) => deleteVignetteValue(id))
 
   createWindow()
 

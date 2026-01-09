@@ -33,13 +33,14 @@ import { useDeleteManyModal } from '@/hooks/use-delete-many-modal'
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  toolbar: {
+  toolbar?: {
     searchKeys: { accessorKey: string; label: string }[]
     listOfFacetedFilter?: facetedFilter[]
   }
   defaultColVisibility?: VisibilityState
   deleteManyFn?: (ids: string[]) => void
   isPendingDeleted?: boolean
+  loading?: boolean
 }
 
 export function DataTable<TData, TValue>({
@@ -48,7 +49,8 @@ export function DataTable<TData, TValue>({
   toolbar,
   deleteManyFn,
   isPendingDeleted,
-  defaultColVisibility
+  defaultColVisibility,
+  loading
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(
@@ -103,11 +105,13 @@ export function DataTable<TData, TValue>({
           }
         }}
       />
-      <DataTableToolbar
-        table={table}
-        listOfFacetedFilter={toolbar.listOfFacetedFilter}
-        searchKeys={toolbar.searchKeys}
-      />
+      {toolbar && (
+        <DataTableToolbar
+          table={table}
+          listOfFacetedFilter={toolbar.listOfFacetedFilter}
+          searchKeys={toolbar.searchKeys}
+        />
+      )}
       <ScrollArea className="overflow-auto">
         <div className="min-w-[700px] h-fit">
           <div className="rounded-md border">
@@ -128,7 +132,13 @@ export function DataTable<TData, TValue>({
                 ))}
               </TableHeader>
               <TableBody>
-                {table.getRowModel().rows?.length ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                      Chargement...
+                    </TableCell>
+                  </TableRow>
+                ) : table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
                       {row.getVisibleCells().map((cell) => (

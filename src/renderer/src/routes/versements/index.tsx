@@ -1,0 +1,167 @@
+import { DataTable } from '@/components/table/data-table'
+import { Button } from '@/components/ui/button'
+import { Heading } from '@/components/ui/heading'
+import { Separator } from '@/components/ui/separator'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { createFileRoute } from '@tanstack/react-router'
+import { Plus, CreditCard } from 'lucide-react'
+import { columns } from '@/pages/versements/columns'
+import { useEffect, useState } from 'react'
+import { VersementAttributes } from 'type'
+import { format } from 'date-fns'
+import { fr } from 'date-fns/locale'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { months, years } from '@/lib/utils'
+
+export const Route = createFileRoute('/versements/')({
+  component: VersementsPage
+})
+
+export function VersementsPage() {
+  const [versements, setVersements] = useState<(VersementAttributes & { createdAt: string })[]>([])
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
+  const [totalsByKind, setTotalsByKind] = useState<{ vignette: number; quittance: number; total: number }>({ vignette: 0, quittance: 0, total: 0 })
+  const [loading, setLoading] = useState(false)
+  const navigate = Route.useNavigate()
+
+  const fetchData = async () => {
+    setLoading(true)
+    try {
+      // Fetch versements
+      const versementsResponse = await window.electron.ipcRenderer.invoke('getVersements', {
+        year: selectedYear,
+        month: selectedMonth
+      })
+      
+      if (versementsResponse.success) {
+        setVersements(versementsResponse.data)
+      } else {
+        console.error('Error fetching versements:', versementsResponse.message)
+      }
+
+      const versementsByKindResponse = await window.electron.ipcRenderer.invoke('getVersementsTotalsByKind', {
+        year: selectedYear,
+        month: selectedMonth
+      })
+      if (versementsByKindResponse.success) {
+        setTotalsByKind(versementsByKindResponse.data)
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [selectedYear, selectedMonth])
+
+  const formattedVersements = versements.map((versement) => ({
+    id: versement.id,
+    numeroVersement: versement.numeroVersement,
+    dateVersement: format(new Date(versement.dateVersement), 'dd MMMM yyyy', { locale: fr }),
+    type: versement.type,
+    montantTotal: versement.montantTotal,
+    numeroQuittance: versement.numeroQuittance || '',
+    createdAt: format(new Date(versement.createdAt!), 'dd MMMM yyyy', { locale: fr })
+  }))
+
+  return (
+    <>
+      <div className="flex items-center justify-between">
+        <Heading
+          title="Versements des Vignettes"
+          description="Gérez les versements pour votre commune"
+        />
+        <Button
+          onClick={() =>
+            navigate({
+              to: '/versements/$versementId',
+              params: {
+                versementId: 'new'
+              }
+            })
+          }
+        >
+          <Plus className="mr-2 h-4 w-4" /> Nouveau Versement
+        </Button>
+      </div>
+      <Separator />
+
+      {/* Summary Cards */}
+      {/* By kind */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Versements Vignettes</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalsByKind.vignette.toFixed(2)} DH</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Versements Quittances</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalsByKind.quittance.toFixed(2)} DH</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Versements Totaux</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{totalsByKind.total.toFixed(2)} DH</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center space-x-4 mb-6">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-medium">Année:</span>
+          <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-medium">Mois:</span>
+          <Select value={selectedMonth?.toString() || ''} onValueChange={(value) => setSelectedMonth(value ? parseInt(value) : null)}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Tous les mois" />
+            </SelectTrigger>
+            <SelectContent>
+              {months.map((month) => (
+                <SelectItem key={month.value?.toString() || 'all'} value={month.value?.toString() || ' '}>
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Data Table */}
+      <DataTable
+        data={formattedVersements}
+        columns={columns}
+        loading={loading}
+      />
+    </>
+  )
+}
