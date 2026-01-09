@@ -173,10 +173,10 @@ const FiscalAttestationPDF: React.FC<FiscalAttestationPDFProps> = ({ fiscalAttes
           </Text>
           <Text style={tw('mb-4')}>
             {`ACTIVITE: `}
-            <Text style={tw('font-alexBold text-primary')}>{activite}</Text>
+            <Text style={tw('font-alexBold text-primary uppercase text-wrap')}>{activite}</Text>
           </Text>
           <Text style={tw('font-alexBold text-primary mb-4')}>
-            {`N'A PAS DE TAXES A REGLER VIS-A-VIS DE LA COMMUNE FERKLA ESSOUFLA JUSQU'A LA DATE DE CE JOUR.`}
+            {`N'A PAS DE TAXES A REGLER VIS-A-VIS DE LA COMMUNE DE FERKLA ESSOUFLA JUSQU'A LA DATE DE CE JOUR.`}
           </Text>
           <Text style={tw('mb-3')}>
             {`EN FOI DE QUOI LA PRESENTE ATTESTATION EST DELIVREE A L'INTERESSE POUR LUI SERVIR ET VALOIR CE QUE DE DROIT.`}
