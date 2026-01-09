@@ -27,6 +27,8 @@ Font.register({
   fontStyle: 'normal'
 })
 
+Font.registerHyphenationCallback((word) => [word])
+
 // Tailwind theme configuration
 const tw = createTw({
   theme: {
@@ -48,6 +50,10 @@ const tw = createTw({
         base: '12px',
         lg: '16px',
         xl: '18px'
+      },
+      // add break-words utility
+      wordBreak: {
+        'break-words': 'break-word'
       }
     }
   }
@@ -152,7 +158,7 @@ const FiscalAttestationPDF: React.FC<FiscalAttestationPDFProps> = ({ fiscalAttes
         {/* attesatation Details Section */}
         <View style={tw('text-base capitalize px-6 pl-14 my-5')}>
           <Text
-            style={tw('mb-4 ms-4')}
+            style={tw('mb-4 ml-6')}
           >{`JE SOUSIGNE PRESIDENT DE LA COMMUNE DE FERKLA ESSOUFLA`}</Text>
           <Text style={tw('mb-4')}>
             {`ATTESTE QUE :`} <Text style={tw('font-alexBold text-primary')}>{name}</Text>
@@ -163,7 +169,7 @@ const FiscalAttestationPDF: React.FC<FiscalAttestationPDFProps> = ({ fiscalAttes
           </Text>
           <Text style={tw('mb-4')}>
             {`ADRESSE : `}
-            <Text style={tw('font-alexBold text-primary')}>{address}</Text>
+            <Text style={tw('font-alexBold text-primary break-word')}>{address}</Text>
           </Text>
           <Text style={tw('mb-4')}>
             {`ITP N° : `}
@@ -185,20 +191,22 @@ const FiscalAttestationPDF: React.FC<FiscalAttestationPDFProps> = ({ fiscalAttes
           </Text>
         </View>
 
-        {/* Dates Section */}
-        <View style={tw('text-sm mb-2 flex flex-row justify-end gap-4')}>
-          <Text style={tw('font-bold')}>
-            A FERKLA ESSOUFLA LE:{' '}
-            <Text style={tw('font-alexBold')}>
-              {format(new Date(createdAt), 'dd/MM/yyyy', { locale: fr })}
+        {/* Dates + Signature Section */}
+        <View style={tw('w-full mt-4 pr-6')}>
+          {/* Date aligned right */}
+          <View style={tw('flex flex-row justify-end')}>
+            <Text style={tw('text-sm font-bold text-right')}>
+              A FERKLA ESSOUFLA LE:{' '}
+              <Text style={tw('font-alexBold')}>
+                {format(new Date(createdAt), 'dd/MM/yyyy', { locale: fr })}
+              </Text>
             </Text>
-          </Text>
-          <View style={tw('p-6 uppercase')}>
-            {/* President Section */}
-            <View style={tw('flex flex-row mb-24 justify-center items-center')}>
-              <View style={tw('text-sm text-center')}>
-                <Text style={tw('mt-4 font-alexBold')}>Le Président</Text>
-              </View>
+          </View>
+
+          {/* President signature */}
+          <View style={tw('mt-6 flex items-end uppercase')}>
+            <View style={tw('w-48')}>
+              <Text style={tw('text-sm text-center font-alexBold')}>Le Président</Text>
             </View>
           </View>
         </View>

@@ -1,6 +1,7 @@
 # cfes-regisseur-app
 
 An Electron application with React and TypeScript
+resolve error of sqllite run : npx electron-rebuild
 
 ## Recommended IDE Setup
 
